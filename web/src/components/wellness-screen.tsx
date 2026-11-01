@@ -8,6 +8,8 @@ import { wellnessId } from "@/lib/offline/ids";
 import { localDate } from "@/lib/validation";
 import type { RosterPlayer, WellnessLog } from "@/lib/types";
 import { useFieldData } from "./use-field-data";
+import { HowToRead } from "./info";
+import { CONCEPTS } from "@/lib/glossary";
 import { useSync } from "./sync-provider";
 
 // Escalas 1–5: 5 = mejor estado (coincide con la base).
@@ -117,6 +119,8 @@ export function WellnessScreen() {
           {done}/{players.length} registrados
         </p>
       </div>
+
+      <HowToRead title="¿Qué se registra acá?" items={[CONCEPTS.wellness, CONCEPTS.rpe, CONCEPTS.acwr]} />
 
       <ul className="space-y-2">
         {players.map((p) => {

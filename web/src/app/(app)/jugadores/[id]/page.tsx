@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { PlayerEvolution, ZBar, type MetricSeries } from "@/components/player-charts";
+import { HowToRead, InfoHeader } from "@/components/info";
+import { CONCEPTS, DOMAIN_INFO, METRIC_INFO } from "@/lib/glossary";
 import { getViewer } from "@/lib/server-data";
 import {
   bodyRegionLabel,
@@ -99,6 +101,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
       const { data } = await supabase.rpc("player_comparison", { p_player_id: id, p_metric_id: m.id });
       return {
         id: m.id,
+        code: m.code,
         name: m.name,
         unit: m.unit,
         decimals: m.decimals,
@@ -160,16 +163,27 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         </div>
       </header>
 
+      <HowToRead
+        title="¿Cómo leer este perfil?"
+        items={[CONCEPTS.zscore, CONCEPTS.groups, CONCEPTS.delta, CONCEPTS.evolution, CONCEPTS.relative, CONCEPTS.consents]}
+        footer={
+          <a href="/guia" className="text-sm font-semibold text-orc-orange-strong">
+            Ver la guía completa de lo que medimos →
+          </a>
+        }
+      />
+
       {/* Evolución */}
       <section className="card">
-        <h2 className="mb-3 font-bold">Evolución</h2>
+        <InfoHeader title={<h2 className="font-bold">Evolución</h2>} info={CONCEPTS.evolution} className="mb-3" />
         <PlayerEvolution metrics={series.filter((s) => s.series.length > 0)} />
       </section>
 
       {/* Última medición por dominio */}
       {[...byDomain.entries()].map(([domain, items]) => (
         <section key={domain}>
-          <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-orc-muted">{domainLabel[domain] ?? domain}</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wide text-orc-muted">{domainLabel[domain] ?? domain}</h2>
+          {DOMAIN_INFO[domain] && <p className="mb-2 text-sm text-orc-muted">{DOMAIN_INFO[domain]}</p>}
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((m) => {
               const last = m.series[m.series.length - 1];
@@ -178,10 +192,12 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
               const improved = delta !== null && delta !== 0 && (delta > 0) === m.higherIsBetter;
               return (
                 <li key={m.id} className="card space-y-2">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-sm font-semibold">{m.name}</span>
-                    <span className="text-xs text-orc-muted">{formatDate(last.session_date)}</span>
-                  </div>
+                  <InfoHeader
+                    title={m.name}
+                    info={METRIC_INFO[m.code]}
+                    titleClassName="text-sm font-semibold"
+                    aside={<span className="shrink-0 text-xs text-orc-muted">{formatDate(last.session_date)}</span>}
+                  />
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-black tabular-nums">{formatValue(Number(last.value), m.decimals)}</span>
                     {m.unit !== "n" && <span className="text-sm text-orc-muted">{m.unit}</span>}
@@ -209,7 +225,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         {/* Maduración */}
         {maturation && age < 19 && (
           <section className="card">
-            <h2 className="font-bold">Maduración</h2>
+            <InfoHeader title={<h2 className="font-bold">Maduración</h2>} info={CONCEPTS.maturation} />
             <p className="mt-1 text-xs text-orc-muted">Estimación de Mirwald · {formatDate(maturation.session_date)}</p>
             <p className="mt-3 text-xl font-black">{maturityLabel[maturation.maturity_status]}</p>
             <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
@@ -232,7 +248,13 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 
         {/* Carga y bienestar */}
         <section className="card">
-          <h2 className="font-bold">Carga y bienestar</h2>
+          <InfoHeader
+            title={<h2 className="font-bold">Carga y bienestar</h2>}
+            info={{
+              what: `${CONCEPTS.acwr.what} ${CONCEPTS.acwr.read}`,
+              read: `${CONCEPTS.wellness.what} ${CONCEPTS.rpe.read}`,
+            }}
+          />
           {acwr && acwr.acwr !== null ? (
             <div className="mt-3 flex items-baseline gap-3">
               <span

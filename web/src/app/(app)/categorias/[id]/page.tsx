@@ -135,6 +135,14 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
             })}
           </tbody>
         </table>
+        <p className="border-t border-orc-line px-3 py-2 text-xs text-orc-muted">
+          Mejor marca de cada jugador en la temporada. <b>10 m</b>: sprint en segundos (menos es mejor) ·{" "}
+          <b>CMJ</b>: salto en cm (potencia) · <b>Yo-Yo</b>: metros en el test de resistencia ·{" "}
+          <b>Sentadilla</b>: 1RM en kg (fuerza de piernas). Tocá un jugador para ver su evolución.{" "}
+          <a href="/guia" className="font-semibold text-orc-orange-strong">
+            Qué significa cada dato →
+          </a>
+        </p>
       </section>
 
       <section>

@@ -5,9 +5,11 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, X
 import type { ComparisonPoint } from "@/lib/types";
 import { formatDate } from "@/lib/labels";
 import { formatValue } from "@/lib/validation";
+import { METRIC_INFO } from "@/lib/glossary";
 
 export interface MetricSeries {
   id: string;
+  code: string;
   name: string;
   unit: string;
   decimals: number;
@@ -52,8 +54,11 @@ export function PlayerEvolution({ metrics }: { metrics: MetricSeries[] }) {
           </button>
         ))}
       </div>
-      <p className="mb-2 text-xs text-orc-muted">
-        {metric.name} ({metric.unit}).{" "}
+      <p className="mb-2 text-sm text-orc-muted">
+        <strong className="text-orc-ink">
+          {metric.name} ({metric.unit}).
+        </strong>{" "}
+        {METRIC_INFO[metric.code]?.what}{" "}
         {!metric.higherIsBetter && "Eje invertido: menos es mejor, así que arriba siempre es mejor."}
       </p>
       <div className="h-64 w-full">

@@ -71,6 +71,17 @@ export default async function HomePage() {
         </section>
       )}
 
+      <a href="/guia" className="card flex items-center gap-3 py-3 hover:border-orc-orange">
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-orc-orange-soft text-lg font-black text-orc-orange-strong">
+          ?
+        </span>
+        <span className="flex-1">
+          <span className="block font-semibold">¿Qué medimos y para qué?</span>
+          <span className="text-sm text-orc-muted">Guía de cada test, métrica y gráfico</span>
+        </span>
+        <span className="text-orc-muted">›</span>
+      </a>
+
       <section>
         <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-orc-muted">Categorías</h2>
         <ul className="grid gap-3 sm:grid-cols-2">

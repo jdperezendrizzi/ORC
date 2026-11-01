@@ -14,6 +14,8 @@ import { resultId } from "@/lib/offline/ids";
 import { formatInput, formatValue, parseMetricValue } from "@/lib/validation";
 import type { EvaluationSession, ResultRow, TestMetric, TestType } from "@/lib/types";
 import { useSync } from "../sync-provider";
+import { InfoHeader } from "../info";
+import { CONCEPTS, METRIC_INFO, TEST_INFO } from "@/lib/glossary";
 
 // Intentos por defecto según protocolo.
 const DEFAULT_ATTEMPTS: Record<string, number> = {
@@ -184,7 +186,28 @@ export function EntryGrid({ data, session, testType }: Props) {
   return (
     <div className="space-y-3">
       <div className="card space-y-3 p-3">
-        {testType.protocol && <p className="text-sm text-orc-muted">{testType.protocol}</p>}
+        {TEST_INFO[testType.code] && (
+          <p className="text-sm">
+            <strong>Qué mide:</strong> {TEST_INFO[testType.code]}
+          </p>
+        )}
+        {metrics.some((m) => METRIC_INFO[m.code]) && (
+          <ul className="space-y-0.5 text-sm text-orc-muted">
+            {metrics
+              .filter((m) => METRIC_INFO[m.code])
+              .map((m) => (
+                <li key={m.id}>
+                  <strong className="text-orc-ink">{m.name}:</strong> {METRIC_INFO[m.code].what}
+                </li>
+              ))}
+          </ul>
+        )}
+        {testType.protocol && (
+          <p className="text-sm text-orc-muted">
+            <strong className="text-orc-ink">Cómo se toma:</strong> {testType.protocol}
+          </p>
+        )}
+        <InfoHeader title={<span className="text-sm text-orc-muted">Puntos de color al lado de cada valor</span>} info={CONCEPTS.sync} titleClassName="" />
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-sm font-medium">
             Intentos
