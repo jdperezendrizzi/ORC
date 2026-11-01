@@ -49,3 +49,24 @@ cd web && cp .env.example .env.local && npm install && npm run dev
 | medico@orc.test | medical |
 
 Casos para probar en la app: el último jugador de M15 tiene **revocado el consentimiento de salud** (debe bloquear la carga de lesiones) y en M15 el seed no carga tests de fuerza máxima.
+
+## Proyecto en la nube (Supabase)
+
+Proyecto `orc-rendimiento` (plan free, región `sa-east-1`) con las 9 migraciones aplicadas y los datos de demo cargados.
+
+* URL: `https://xcpoczzznnexjkbthpyb.supabase.co`
+* Clave pública: la *publishable key* del panel (Settings → API). Es pública por diseño; la seguridad la da RLS.
+* Usuarios demo: los mismos emails de la tabla de arriba, pero **con otra contraseña** (no la del repo, porque el proyecto está en internet). Se pasó por chat; no se commitea.
+
+### Antes de cargar datos reales
+
+1. Borrar los usuarios demo (`Authentication → Users`, los `@orc.test`) y los jugadores `(demo)`.
+2. Crear el usuario admin real por invitación y activarlo (`profiles.role = 'admin'`, `active = true`).
+3. Activar *Leaked password protection* en Authentication → Settings (lo marca el advisor de seguridad).
+4. Deshabilitar el registro abierto (Authentication → Sign In / Providers): las cuentas las crea el admin.
+
+### Publicar la web (Vercel, plan Hobby gratis)
+
+1. Importar el repo en Vercel con **Root Directory = `web`**.
+2. Variables de entorno: `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publishable key).
+3. En Supabase → Authentication → URL Configuration, poner la URL de Vercel como *Site URL*.
