@@ -1,6 +1,6 @@
 # ORC Rendimiento · web
 
-Next.js 15 (App Router) + TypeScript + Tailwind 4 + Supabase. Mobile-first, identidad del club (negro / naranja `#FF7F00` / blanco).
+Next.js 15 (App Router) + TypeScript + Tailwind 4 + Supabase. Mobile-first, identidad del club (negro `#231F20` / naranja `#F1882A` / blanco, tomados del escudo oficial `public/crest.png`).
 
 ## Correr
 

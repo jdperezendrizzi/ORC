@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
           <a href="/" className="flex items-center gap-2" aria-label="Inicio">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/crest.svg" alt="" width={30} height={34} className="h-[34px] w-[30px]" />
+            <img src="/crest.png" alt="" width={250} height={278} className="h-[34px] w-auto" />
             <span className="text-lg font-black tracking-tight">
               ORC <span className="text-orc-orange max-[420px]:hidden">Rendimiento</span>
             </span>

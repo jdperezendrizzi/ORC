@@ -70,12 +70,12 @@ export function PlayerEvolution({ metrics }: { metrics: MetricSeries[] }) {
               labelFormatter={(d) => formatDate(String(d), { day: "numeric", month: "long", year: "numeric" })}
             />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Line type="monotone" dataKey="jugador" name="Jugador" stroke="#ff7f00" strokeWidth={3} dot={{ r: 4 }} isAnimationActive={false} />
+            <Line type="monotone" dataKey="jugador" name="Jugador" stroke="#f1882a" strokeWidth={3} dot={{ r: 4 }} isAnimationActive={false} />
             <Line
               type="monotone"
               dataKey="categoria"
               name="Promedio categoría"
-              stroke="#0a0a0a"
+              stroke="#231f20"
               strokeDasharray="5 4"
               strokeWidth={2}
               dot={false}

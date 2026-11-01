@@ -1,14 +1,15 @@
 @import "tailwindcss";
 
-/* Identidad ORC: negro, naranja #FF7F00 y blanco (escudo del club).
+/* Identidad ORC: colores tomados del escudo oficial (public/crest.png):
+   negro #231F20, naranja #F1882A y blanco.
    Contenido en fondo claro: se lee mejor al sol en la cancha.
-   El naranja va siempre con texto NEGRO (contraste 8.6:1); blanco sobre
+   El naranja va siempre con texto NEGRO (contraste ~6.5:1); blanco sobre
    naranja no cumple WCAG. */
 @theme {
-  --color-orc-orange: #ff7f00;
-  --color-orc-orange-strong: #e06f00;
-  --color-orc-orange-soft: #fff1e0;
-  --color-orc-black: #0a0a0a;
+  --color-orc-orange: #f1882a;
+  --color-orc-orange-strong: #d06d14;
+  --color-orc-orange-soft: #fdf0e3;
+  --color-orc-black: #231f20;
   --color-orc-ink: #1c1917;
   --color-orc-muted: #57534e;
   --color-orc-line: #e7e5e4;
