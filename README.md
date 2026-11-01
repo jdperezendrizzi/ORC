@@ -16,6 +16,7 @@ scripts/db/
   verify.sh          migra una base limpia y corre los tests
 tests/db/            tests SQL (asserts) de lógica y RLS
 docs/data-model.md   modelo y decisiones
+web/                 app Next.js (ver web/README.md)
 ```
 
 ## Desarrollo
@@ -27,6 +28,9 @@ supabase db reset          # migraciones + seed
 
 # Sin Docker (Postgres local cualquiera)
 PGHOST=localhost PGPORT=5432 PGUSER=postgres scripts/db/verify.sh
+
+# Web app
+cd web && cp .env.example .env.local && npm install && npm run dev
 ```
 
 ## Datos

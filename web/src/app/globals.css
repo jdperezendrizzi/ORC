@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/* Identidad ORC: negro, naranja #FF7F00 y blanco (escudo del club).
+   Contenido en fondo claro: se lee mejor al sol en la cancha.
+   El naranja va siempre con texto NEGRO (contraste 8.6:1); blanco sobre
+   naranja no cumple WCAG. */
+@theme {
+  --color-orc-orange: #ff7f00;
+  --color-orc-orange-strong: #e06f00;
+  --color-orc-orange-soft: #fff1e0;
+  --color-orc-black: #0a0a0a;
+  --color-orc-ink: #1c1917;
+  --color-orc-muted: #57534e;
+  --color-orc-line: #e7e5e4;
+  --color-orc-surface: #ffffff;
+  --color-orc-bg: #f5f5f4;
+  --color-good: #15803d;
+  --color-bad: #b91c1c;
+  --color-warn: #a16207;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: var(--color-orc-bg);
+  color: var(--color-orc-ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Inputs numéricos grandes para dedos en la cancha */
+@layer components {
+  .field-input {
+    @apply h-12 w-full rounded-lg border border-orc-line bg-white px-3 text-lg tabular-nums outline-none
+      focus:border-orc-orange focus:ring-2 focus:ring-orc-orange/40;
+  }
+  .btn-primary {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 font-semibold transition
+      disabled:cursor-not-allowed disabled:opacity-50 bg-orc-orange text-orc-black hover:bg-orc-orange-strong active:scale-[0.98];
+  }
+  .btn-dark {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 font-semibold transition
+      disabled:cursor-not-allowed disabled:opacity-50 bg-orc-black text-white hover:bg-black/80;
+  }
+  .btn-ghost {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 font-semibold transition
+      disabled:cursor-not-allowed disabled:opacity-50 border border-orc-line bg-white text-orc-ink hover:bg-orc-bg;
+  }
+  .card {
+    @apply rounded-xl border border-orc-line bg-orc-surface p-4 shadow-sm;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium text-orc-muted;
+  }
+}
