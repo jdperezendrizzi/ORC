@@ -44,4 +44,4 @@ PGHOST=localhost PGPORT=5432 PGUSER=postgres scripts/db/verify.sh
 | profe.primera@orc.test | coach Primera + Intermedia |
 | medico@orc.test | medical |
 
-Casos para probar en la app: el último jugador de M15 tiene **revocado el consentimiento de salud** (debe bloquear la carga de lesiones) y en M15 no hay datos de fuerza (son menores de 16).
+Casos para probar en la app: el último jugador de M15 tiene **revocado el consentimiento de salud** (debe bloquear la carga de lesiones) y en M15 el seed no carga tests de fuerza máxima.
