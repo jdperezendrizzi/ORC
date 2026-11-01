@@ -8,10 +8,10 @@ export const injuryStatusLabel: Record<string, string> = {
 };
 
 export const injuryStatusTone: Record<string, string> = {
-  active: "bg-red-100 text-red-800",
-  rehab: "bg-amber-100 text-amber-900",
-  return_to_play: "bg-sky-100 text-sky-900",
-  closed: "bg-green-100 text-green-800",
+  active: "tone-red",
+  rehab: "tone-amber",
+  return_to_play: "tone-sky",
+  closed: "tone-green",
 };
 
 export const bodyRegionLabel: Record<string, string> = {

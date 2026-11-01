@@ -89,9 +89,9 @@ export default async function HomePage() {
                     <span className="text-sm text-orc-muted">{players.length} jugadores</span>
                   </span>
                   <span className="flex flex-col items-end gap-1">
-                    {injured > 0 && <span className="chip bg-red-100 text-red-800">{injured} {injured === 1 ? "lesionado" : "lesionados"}</span>}
+                    {injured > 0 && <span className="chip tone-red">{injured} {injured === 1 ? "lesionado" : "lesionados"}</span>}
                     {noConsent > 0 && (
-                      <span className="chip bg-amber-100 text-amber-900">{noConsent} sin consentimiento</span>
+                      <span className="chip tone-amber">{noConsent} sin consentimiento</span>
                     )}
                   </span>
                 </a>

@@ -125,7 +125,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
                   <td className="space-x-1 px-3 py-2 whitespace-nowrap">
                     {status && <span className={`chip ${injuryStatusTone[status]}`}>{injuryStatusLabel[status]}</span>}
                     {!has(pid, "performance_data") && (
-                      <span className="chip bg-amber-100 text-amber-900" title="Sin consentimiento de datos de rendimiento">
+                      <span className="chip tone-amber" title="Sin consentimiento de datos de rendimiento">
                         Sin consent.
                       </span>
                     )}

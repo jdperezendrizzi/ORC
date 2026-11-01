@@ -137,15 +137,15 @@ export function WellnessScreen() {
                   {p.last_name}, {p.first_name}
                 </span>
                 {!consentOk ? (
-                  <span className="chip bg-amber-100 text-amber-900">Sin consentimiento</span>
+                  <span className="chip tone-amber">Sin consentimiento</span>
                 ) : pending?.status === "error" ? (
-                  <span className="chip bg-red-100 text-red-800" title={pending.error}>
+                  <span className="chip tone-red" title={pending.error}>
                     Error
                   </span>
                 ) : pending ? (
                   <span className="chip bg-orc-orange-soft text-orc-orange-strong">Sin subir</span>
                 ) : current ? (
-                  <span className="chip bg-green-100 text-green-800">
+                  <span className="chip tone-green">
                     {score(current) !== null ? `${score(current)}/25` : "✓"}
                   </span>
                 ) : (
@@ -225,7 +225,7 @@ function WellnessForm({
 
   return (
     <div className="space-y-4 border-t border-orc-line px-4 py-4">
-      {error && <p className="rounded-md bg-red-50 p-2 text-sm text-bad">{error}</p>}
+      {error && <p className="rounded-md tone-red p-2 text-sm">{error}</p>}
       <div className="grid grid-cols-3 gap-3">
         <div>
           <label className="label" htmlFor={`sleep-${player.id}`}>
@@ -281,9 +281,7 @@ function WellnessForm({
                 type="button"
                 onClick={() => set(item.key, v)}
                 aria-pressed={form[item.key] === v}
-                className={`h-11 rounded-lg text-lg font-bold ${
-                  form[item.key] === v ? "bg-orc-orange text-orc-black" : "bg-orc-bg text-orc-ink"
-                }`}
+                className="opt h-11 text-lg"
               >
                 {v}
               </button>

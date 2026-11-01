@@ -1,5 +1,6 @@
 import { BottomNav, LogoutButton, PrecacheFieldPages, SyncBadge, TopNav } from "@/components/app-chrome";
 import { SyncProvider } from "@/components/sync-provider";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { canLoadResults, getViewer, roleLabel } from "@/lib/server-data";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -9,7 +10,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <SyncProvider>
       <header className="sticky top-0 z-30 bg-orc-black pt-[env(safe-area-inset-top)] text-white">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
+        <div className="mx-auto flex h-14 max-w-5xl items-center gap-2 px-4 sm:gap-3">
           <a href="/" className="flex items-center gap-2" aria-label="Inicio">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/crest.png" alt="" width={250} height={278} className="h-[34px] w-auto" />
@@ -20,6 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="ml-4 flex-1">
             <TopNav canLoad={canLoad} />
           </div>
+          <ThemeToggle />
           <SyncBadge />
         </div>
         <div className="h-1 bg-orc-orange" aria-hidden />

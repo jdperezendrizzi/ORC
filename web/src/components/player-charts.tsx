@@ -45,7 +45,7 @@ export function PlayerEvolution({ metrics }: { metrics: MetricSeries[] }) {
             aria-selected={m.id === metric.id}
             onClick={() => setSelected(m.id)}
             className={`chip h-8 shrink-0 px-3 text-sm ${
-              m.id === metric.id ? "bg-orc-black text-orc-orange" : "bg-orc-bg text-orc-ink"
+              m.id === metric.id ? "bg-orc-orange text-orc-black ring-2 ring-orc-orange/40" : "bg-orc-chip text-orc-ink ring-1 ring-orc-line"
             }`}
           >
             {m.name}
@@ -126,10 +126,10 @@ export function ZBar({ z, label }: { z: number | null; label: string }) {
           {z.toLocaleString("es-AR", { maximumFractionDigits: 1, minimumFractionDigits: 1 })} DE
         </span>
       </div>
-      <div className="relative mt-1 h-1.5 rounded-full bg-gradient-to-r from-red-200 via-stone-200 to-green-200">
-        <span className="absolute top-1/2 left-1/2 h-3 w-px -translate-y-1/2 bg-stone-500" aria-hidden />
+      <div className="relative mt-1 h-1.5 rounded-full bg-gradient-to-r from-track-bad via-track-mid to-track-good">
+        <span className="absolute top-1/2 left-1/2 h-3 w-px -translate-y-1/2 bg-orc-muted" aria-hidden />
         <span
-          className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-orc-black shadow"
+          className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-orc-surface bg-orc-ink shadow"
           style={{ left: `${pct}%` }}
           aria-hidden
         />

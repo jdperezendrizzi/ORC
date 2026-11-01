@@ -191,7 +191,7 @@ export function EntryGrid({ data, session, testType }: Props) {
             <select
               value={attempts}
               onChange={(e) => setAttempts(Number(e.target.value))}
-              className="h-9 rounded-md border border-orc-line bg-white px-2"
+              className="h-9 rounded-md border border-orc-line-strong bg-orc-field px-2 text-orc-ink"
             >
               {[1, 2, 3, 4, 5].map((n) => (
                 <option key={n}>{n}</option>
@@ -203,7 +203,7 @@ export function EntryGrid({ data, session, testType }: Props) {
             placeholder="Buscar jugador o número"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="h-9 min-w-0 flex-1 rounded-md border border-orc-line bg-white px-3 text-sm"
+            className="h-9 min-w-0 flex-1 rounded-md border border-orc-line-strong bg-orc-field px-3 text-sm text-orc-ink placeholder:text-orc-muted"
           />
           <span className="text-sm tabular-nums text-orc-muted">
             {loadedCount}/{players.length} cargados
@@ -270,8 +270,8 @@ export function EntryGrid({ data, session, testType }: Props) {
                                   }
                                 }}
                                 className={`field-input pr-7 ${
-                                  invalid || status === "error" ? "border-bad bg-red-50" : ""
-                                } disabled:bg-orc-bg`}
+                                  invalid || status === "error" ? "border-bad bg-bad/10" : ""
+                                } disabled:cursor-not-allowed disabled:border-orc-line disabled:bg-orc-chip`}
                               />
                               <StatusDot status={status} />
                               {invalid && <p className="mt-0.5 text-xs text-bad">{invalid}</p>}

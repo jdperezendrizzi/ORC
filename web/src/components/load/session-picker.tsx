@@ -61,7 +61,7 @@ export function SessionPicker({ data, sessions, initialCategoryId, onSelect, onC
               aria-selected={c.id === categoryId}
               onClick={() => setCategoryId(c.id)}
               className={`chip h-9 shrink-0 px-4 text-sm ${
-                c.id === categoryId ? "bg-orc-black text-orc-orange" : "bg-white text-orc-ink ring-1 ring-orc-line"
+                c.id === categoryId ? "bg-orc-black text-orc-orange" : "bg-orc-surface text-orc-ink ring-1 ring-orc-line-strong"
               }`}
             >
               {c.name}

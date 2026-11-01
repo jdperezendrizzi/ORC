@@ -2,26 +2,84 @@
 
 /* Identidad ORC: colores tomados del escudo oficial (public/crest.png):
    negro #231F20, naranja #F1882A y blanco.
-   Contenido en fondo claro: se lee mejor al sol en la cancha.
-   El naranja va siempre con texto NEGRO (contraste ~6.5:1); blanco sobre
-   naranja no cumple WCAG. */
+
+   Tema: claro / oscuro / sistema. El usuario elige en el header; se guarda
+   en el dispositivo y se aplica como <html data-theme="light|dark">. Sin
+   elección (sistema) manda prefers-color-scheme.
+
+   Reglas de contraste (WCAG AA):
+   * El naranja va siempre con texto NEGRO (~6.5:1); blanco sobre naranja no cumple.
+   * Para texto naranja sobre fondo claro se usa orc-orange-strong (más oscuro).
+   * Campos y opciones sin elegir llevan borde orc-line-strong (≥3:1 con el fondo),
+     para que se distingan de la tarjeta. */
 @theme {
   --color-orc-orange: #f1882a;
-  --color-orc-orange-strong: #d06d14;
-  --color-orc-orange-soft: #fdf0e3;
-  --color-orc-black: #231f20;
-  --color-orc-ink: #1c1917;
-  --color-orc-muted: #57534e;
-  --color-orc-line: #e7e5e4;
-  --color-orc-surface: #ffffff;
-  --color-orc-bg: #f5f5f4;
+  --color-orc-orange-hover: #e07818;
+  --color-orc-orange-strong: #b5570c;   /* texto/links naranjas */
+  --color-orc-orange-soft: #fdeedd;     /* fondos suaves de resalte */
+  --color-orc-black: #231f20;           /* header, fichas oscuras */
+  --color-orc-ink: #1c1917;             /* texto principal */
+  --color-orc-muted: #57534e;           /* texto secundario */
+  --color-orc-line: #d9d4cf;            /* bordes de tarjetas y separadores */
+  --color-orc-line-strong: #8f8780;     /* bordes de campos y opciones */
+  --color-orc-surface: #ffffff;         /* tarjetas */
+  --color-orc-field: #ffffff;           /* campos de carga */
+  --color-orc-chip: #ebe6e1;            /* pestañas/chips neutros */
+  --color-orc-bg: #edeae6;              /* fondo de página */
   --color-good: #15803d;
   --color-bad: #b91c1c;
-  --color-warn: #a16207;
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --color-warn: #92400e;
+  --color-track-bad: #f5c6c6;
+  --color-track-mid: #e2ddd8;
+  --color-track-good: #bfe8cf;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-:root {
+/* Paleta oscura: se define una vez y se aplica por preferencia del sistema
+   (si el usuario no eligió "claro") o por elección explícita. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-orc-orange-hover: #f59a48;
+    --color-orc-orange-strong: #f7a65c;
+    --color-orc-orange-soft: #3a2614;
+    --color-orc-ink: #f3efea;
+    --color-orc-muted: #b8afa8;
+    --color-orc-line: #3b3435;
+    --color-orc-line-strong: #7a7072;
+    --color-orc-surface: #1f1b1c;
+    --color-orc-field: #151213;
+    --color-orc-chip: #2e2829;
+    --color-orc-bg: #121011;
+    --color-good: #4ade80;
+    --color-bad: #f87171;
+    --color-warn: #fbbf24;
+    --color-track-bad: #5a2628;
+    --color-track-mid: #3a3334;
+    --color-track-good: #1f4a33;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --color-orc-orange-hover: #f59a48;
+  --color-orc-orange-strong: #f7a65c;
+  --color-orc-orange-soft: #3a2614;
+  --color-orc-ink: #f3efea;
+  --color-orc-muted: #b8afa8;
+  --color-orc-line: #3b3435;
+  --color-orc-line-strong: #7a7072;
+  --color-orc-surface: #1f1b1c;
+  --color-orc-field: #151213;
+  --color-orc-chip: #2e2829;
+  --color-orc-bg: #121011;
+  --color-good: #4ade80;
+  --color-bad: #f87171;
+  --color-warn: #fbbf24;
+  --color-track-bad: #5a2628;
+  --color-track-mid: #3a3334;
+  --color-track-good: #1f4a33;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
   color-scheme: light;
 }
 
@@ -32,23 +90,23 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Inputs numéricos grandes para dedos en la cancha */
 @layer components {
+  /* Inputs numéricos grandes para dedos en la cancha */
   .field-input {
-    @apply h-12 w-full rounded-lg border border-orc-line bg-white px-3 text-lg tabular-nums outline-none
-      focus:border-orc-orange focus:ring-2 focus:ring-orc-orange/40;
+    @apply h-12 w-full rounded-lg border border-orc-line-strong bg-orc-field px-3 text-lg text-orc-ink tabular-nums
+      outline-none placeholder:text-orc-muted/70 focus:border-orc-orange focus:ring-2 focus:ring-orc-orange/50;
   }
   .btn-primary {
     @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 font-semibold transition
-      disabled:cursor-not-allowed disabled:opacity-50 bg-orc-orange text-orc-black hover:bg-orc-orange-strong active:scale-[0.98];
+      disabled:cursor-not-allowed disabled:opacity-50 bg-orc-orange text-orc-black hover:bg-orc-orange-hover active:scale-[0.98];
   }
   .btn-dark {
-    @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 font-semibold transition
-      disabled:cursor-not-allowed disabled:opacity-50 bg-orc-black text-white hover:bg-black/80;
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 font-semibold transition
+      disabled:cursor-not-allowed disabled:opacity-50 bg-orc-black text-white hover:bg-black;
   }
   .btn-ghost {
     @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 font-semibold transition
-      disabled:cursor-not-allowed disabled:opacity-50 border border-orc-line bg-white text-orc-ink hover:bg-orc-bg;
+      disabled:cursor-not-allowed disabled:opacity-50 border border-orc-line-strong bg-orc-surface text-orc-ink hover:bg-orc-chip;
   }
   .card {
     @apply rounded-xl border border-orc-line bg-orc-surface p-4 shadow-sm;
@@ -59,4 +117,44 @@ body {
   .label {
     @apply mb-1 block text-sm font-medium text-orc-muted;
   }
+
+  /* Opción seleccionable (escalas 1–5, pestañas, filtros) */
+  .opt {
+    @apply rounded-lg border border-orc-line-strong bg-orc-field font-semibold text-orc-ink transition
+      hover:border-orc-orange;
+  }
+  .opt[aria-pressed="true"],
+  .opt[aria-selected="true"] {
+    @apply border-orc-orange bg-orc-orange font-black text-orc-black ring-2 ring-orc-orange/40;
+  }
+
+  /* Estados (lesión, consentimiento, sync): fondo suave + texto oscuro en
+     claro; fondo translúcido + texto claro en oscuro. */
+  .tone-red {
+    background: color-mix(in srgb, #dc2626 14%, var(--color-orc-surface));
+    color: #991b1b;
+  }
+  .tone-amber {
+    background: color-mix(in srgb, #f59e0b 20%, var(--color-orc-surface));
+    color: #78350f;
+  }
+  .tone-green {
+    background: color-mix(in srgb, #16a34a 16%, var(--color-orc-surface));
+    color: #14532d;
+  }
+  .tone-sky {
+    background: color-mix(in srgb, #0284c7 15%, var(--color-orc-surface));
+    color: #0c4a6e;
+  }
 }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tone-red { color: #fca5a5; }
+  :root:not([data-theme="light"]) .tone-amber { color: #fcd34d; }
+  :root:not([data-theme="light"]) .tone-green { color: #86efac; }
+  :root:not([data-theme="light"]) .tone-sky { color: #7dd3fc; }
+}
+:root[data-theme="dark"] .tone-red { color: #fca5a5; }
+:root[data-theme="dark"] .tone-amber { color: #fcd34d; }
+:root[data-theme="dark"] .tone-green { color: #86efac; }
+:root[data-theme="dark"] .tone-sky { color: #7dd3fc; }
