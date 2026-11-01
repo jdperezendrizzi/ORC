@@ -184,7 +184,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-black tabular-nums">{formatValue(Number(last.value), m.decimals)}</span>
-                    <span className="text-sm text-orc-muted">{m.unit}</span>
+                    {m.unit !== "n" && <span className="text-sm text-orc-muted">{m.unit}</span>}
                     {delta !== null && delta !== 0 && (
                       <span className={`ml-auto text-sm font-semibold ${improved ? "text-good" : "text-bad"}`}>
                         {delta > 0 ? "▲" : "▼"} {formatValue(Math.abs(delta), m.decimals)}

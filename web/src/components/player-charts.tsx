@@ -29,6 +29,10 @@ export function PlayerEvolution({ metrics }: { metrics: MetricSeries[] }) {
     linea: p.line_mean !== null ? Number(p.line_mean) : null,
   }));
   const fmt = (v: number) => formatValue(v, metric.decimals);
+  const { domain, ticks } = niceAxis(
+    data.flatMap((d) => [d.jugador, d.categoria, d.linea]).filter((v): v is number => v !== null && !Number.isNaN(v)),
+    metric.decimals,
+  );
 
   return (
     <div>
@@ -59,7 +63,8 @@ export function PlayerEvolution({ metrics }: { metrics: MetricSeries[] }) {
             <XAxis dataKey="date" tickFormatter={(d: string) => formatDate(d)} fontSize={12} stroke="#57534e" />
             <YAxis
               reversed={!metric.higherIsBetter}
-              domain={["auto", "auto"]}
+              domain={domain}
+              ticks={ticks}
               tickFormatter={fmt}
               fontSize={12}
               width={56}
@@ -131,4 +136,28 @@ export function ZBar({ z, label }: { z: number | null; label: string }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Eje Y con marcas distintas al redondear a los decimales de la métrica.
+ * (Con rangos chicos, p.ej. sprint 1,73–1,76 s, el eje automático repetía
+ * "1,74" porque sus marcas caían entre centésimas.)
+ */
+export function niceAxis(values: number[], decimals: number): { domain: [number, number]; ticks: number[] } {
+  if (values.length === 0) return { domain: [0, 1], ticks: [0, 1] };
+  const unit = 10 ** -decimals;
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+  const pad = Math.max((max - min) * 0.15, unit);
+  min -= pad;
+  max += pad;
+  // Paso "lindo" (1, 2, 2.5, 5 × 10^k), nunca menor a la resolución de la métrica.
+  const raw = (max - min) / 4;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const step = Math.max(unit, ([1, 2, 2.5, 5, 10].find((m) => m * mag >= raw) ?? 10) * mag);
+  const start = Math.floor(min / step) * step;
+  const end = Math.ceil(max / step) * step;
+  const ticks: number[] = [];
+  for (let t = start; t <= end + step / 2; t += step) ticks.push(Number(t.toFixed(decimals + 2)));
+  return { domain: [ticks[0], ticks[ticks.length - 1]], ticks };
 }
