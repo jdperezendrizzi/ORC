@@ -4,6 +4,7 @@
 -- Ejecutar: scripts/db/verify.sh
 -- =====================================================================
 begin;
+\o /dev/null
 
 do $$
 declare

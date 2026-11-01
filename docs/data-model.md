@@ -32,3 +32,16 @@ evaluation_sessions (season, category, tipo) ──< results >── test_metric
 * RPE: CR-10 (0–10). `srpe_load = RPE × minutos`.
 * ACWR: promedio 7 d / promedio 28 d sobre sRPE (`v_player_acwr`).
 * Maduración: pre-PHV < −1, circa −1…1, post-PHV > 1 (`v_maturation`).
+
+## Seguridad (RLS)
+
+La matriz completa está en el encabezado de `supabase/migrations/*_rls.sql`. Resumen:
+
+* **Perfil inactivo ⇒ no ve nada.** Las cuentas nacen inactivas; sólo un admin cambia rol, estado o email.
+* **coach**: ve los jugadores asignados a sus categorías en la temporada actual, **con todo su historial**. Carga sesiones/resultados sólo en sus categorías y temporadas asignadas; wellness y alta de lesiones de sus jugadores. No ve `player_private`, tutores, notas clínicas ni auditoría. No puede modificar identidad del jugador (nombre, nacimiento, sexo).
+* **medical**: ve todo el plantel, datos privados y notas clínicas; gestiona lesiones; no carga resultados.
+* **admin**: todo. Único que crea jugadores, tutores, consentimientos y asignaciones, y que borra físicamente.
+* **anon**: sin acceso a `public`.
+* Benchmarks: agregados (n ≥ 3) vía función `security definer`; nunca filas individuales.
+
+Tests: `tests/db/02_rls.sql` (≈50 asserts por rol).
