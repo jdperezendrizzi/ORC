@@ -133,6 +133,7 @@ insert into injury_notes (injury_id, note) values ('1e000000-0000-4000-8000-0000
 -- =====================================================================
 -- anon
 -- =====================================================================
+set local statement_timeout = 0;
 set local role anon;
 select rls_t.throws('select * from public.players', 'anon no lee players');
 select rls_t.throws('select * from public.results', 'anon no lee results');
@@ -144,6 +145,13 @@ reset role;
 -- =====================================================================
 set local role authenticated;
 select rls_t.login('c0000000-0000-4000-8000-00000000000a');
+
+-- Regresión de performance (0009): con el volumen del seed, una política
+-- por fila volvía cuadrático el SELECT de results. Debe resolver en < 3 s.
+set local statement_timeout = '3s';
+select rls_t.ok('select count(*) from public.results', 'coach: results completo en < 3 s');
+select rls_t.ok('select count(*) from public.evaluation_sessions', 'coach: sesiones en < 3 s');
+select rls_t.ok('select count(*) from public.v_session_best', 'coach: vista v_session_best en < 3 s');
 
 select rls_t.eq((select count(*) from players where last_name = 'RLS'), 2, 'coach_a ve sólo su categoría');
 select rls_t.eq((select count(*) from players where id = 'b1000000-0000-4000-8000-0000000000b1'), 0, 'coach_a no ve jugador de Cat B');
@@ -179,6 +187,27 @@ select rls_t.ok($$insert into evaluation_sessions (season_id, category_id, sessi
 select rls_t.throws($$insert into evaluation_sessions (season_id, category_id, session_type, session_date) values
   ('5e000000-0000-4000-8000-000000002026', 'ca000000-0000-4000-8000-00000000000b', 'training', '2026-04-10')$$,
   'coach_a NO crea sesión de Cat B');
+-- La app sincroniza con UPSERT (insert ... on conflict do update): en
+-- Postgres la fila nueva también debe pasar la política de SELECT.
+select rls_t.ok($$insert into evaluation_sessions (id, season_id, category_id, session_type, session_date) values
+  ('5a000000-0000-4000-8000-0000000000c1', '5e000000-0000-4000-8000-000000002026', 'ca000000-0000-4000-8000-00000000000a', 'testing', '2026-04-20')
+  on conflict (id) do update set session_date = excluded.session_date$$, 'coach_a crea sesión por upsert');
+select rls_t.ok($$insert into evaluation_sessions (id, season_id, category_id, session_type, session_date) values
+  ('5a000000-0000-4000-8000-0000000000c1', '5e000000-0000-4000-8000-000000002026', 'ca000000-0000-4000-8000-00000000000a', 'testing', '2026-04-21')
+  on conflict (id) do update set session_date = excluded.session_date$$, 'coach_a reenvía la misma sesión (idempotente)');
+select rls_t.ok($$insert into results (id, session_id, player_id, metric_id, value) values
+  ('5b000000-0000-4000-8000-0000000000c1', '5a000000-0000-4000-8000-0000000000c1', 'b1000000-0000-4000-8000-0000000000a1', '78000000-0000-4000-8000-000000000001', 1.88)
+  on conflict (id) do update set value = excluded.value$$, 'coach_a carga resultado por upsert');
+select rls_t.ok($$insert into results (id, session_id, player_id, metric_id, value) values
+  ('5b000000-0000-4000-8000-0000000000c1', '5a000000-0000-4000-8000-0000000000c1', 'b1000000-0000-4000-8000-0000000000a1', '78000000-0000-4000-8000-000000000001', 1.86)
+  on conflict (id) do update set value = excluded.value$$, 'coach_a corrige resultado por upsert');
+select rls_t.eq((select count(*) from results where id = '5b000000-0000-4000-8000-0000000000c1' and value = 1.86), 1, 'upsert actualizó el valor');
+select rls_t.throws($$insert into evaluation_sessions (id, season_id, category_id, session_type, session_date) values
+  ('5a000000-0000-4000-8000-0000000000c2', '5e000000-0000-4000-8000-000000002026', 'ca000000-0000-4000-8000-00000000000b', 'testing', '2026-04-20')
+  on conflict (id) do update set session_date = excluded.session_date$$, 'coach_a NO crea sesión de Cat B por upsert');
+select rls_t.ok($$insert into wellness_logs (id, player_id, log_date, fatigue) values
+  ('5c000000-0000-4000-8000-0000000000c1', 'b1000000-0000-4000-8000-0000000000a1', '2026-04-20', 3)
+  on conflict (id) do update set fatigue = excluded.fatigue$$, 'coach_a carga wellness por upsert');
 select rls_t.eq(rls_t.affected($$delete from results where player_id = 'b1000000-0000-4000-8000-0000000000a1'$$), 0, 'coach_a no borra físicamente');
 select rls_t.ok($$insert into wellness_logs (player_id, log_date, fatigue) values ('b1000000-0000-4000-8000-0000000000a2', '2026-04-03', 4)$$, 'coach_a carga wellness');
 select rls_t.throws($$insert into wellness_logs (player_id, log_date, fatigue) values ('b1000000-0000-4000-8000-0000000000b1', '2026-04-03', 4)$$, 'coach_a NO carga wellness de Cat B');
@@ -226,6 +255,7 @@ reset role;
 -- =====================================================================
 set local role authenticated;
 select rls_t.login('d0000000-0000-4000-8000-000000000001');
+select rls_t.ok('select count(*) from public.results', 'medical: results completo en < 3 s');
 select rls_t.eq((select count(*) from players where last_name = 'RLS'), 3, 'medical ve todos');
 select rls_t.eq((select count(*) from player_private where player_id = 'b1000000-0000-4000-8000-0000000000a1'), 1, 'medical ve datos privados');
 select rls_t.eq((select count(*) from injury_notes where injury_id = '1e000000-0000-4000-8000-000000000001'), 1, 'medical ve notas clínicas');

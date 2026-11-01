@@ -44,4 +44,6 @@ La matriz completa está en el encabezado de `supabase/migrations/*_rls.sql`. Re
 * **anon**: sin acceso a `public`.
 * Benchmarks: agregados (n ≥ 3) vía función `security definer`; nunca filas individuales.
 
-Tests: `tests/db/02_rls.sql` (≈50 asserts por rol).
+* Las políticas usan conjuntos de ids visibles (`col in (select private.visible_player_ids())`), evaluados una vez por consulta. Nunca funciones por fila que recorran tablas grandes (ver migración 0009).
+
+Tests: `tests/db/02_rls.sql` (≈55 asserts por rol, incluye regresión de performance con statement_timeout).
