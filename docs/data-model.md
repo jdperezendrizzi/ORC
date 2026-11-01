@@ -23,7 +23,7 @@ evaluation_sessions (season, category, tipo) ──< results >── test_metric
 | Consentimiento | Bloqueo duro: sin consentimiento vigente no se cargan resultados (`performance_data`; GPS requiere `gps_tracking`), bienestar ni lesiones (`medical_data`). Menor ⇒ firma un tutor vinculado. |
 | Datos sensibles | `player_private` e `injury_notes` separados para aplicar RLS más estricta. |
 | Benchmarks | `category_benchmarks()` (security definer) devuelve sólo agregados con n ≥ 3; un profe compara contra el club sin ver individuos ajenos. |
-| Comparación | `player_comparison()` devuelve la serie y z-scores vs. categoría, unidad (forwards/backs) y puesto. z > 0 = mejor que el promedio, siempre. |
+| Comparación | `player_comparison()` devuelve la serie y z-scores vs. categoría, unidad (forwards/backs), línea y puesto (el puesto rara vez llega a n ≥ 3; la línea es la referencia posicional útil). z > 0 = mejor que el promedio, siempre. |
 | Auditoría | `audit_log` con diff por columna sobre datos de menores, consentimientos, lesiones y cambios/bajas de resultados. |
 
 ## Escalas

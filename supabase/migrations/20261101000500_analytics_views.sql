@@ -191,7 +191,9 @@ comment on function public.category_benchmarks is
   'Benchmarks agregados (n>=3) por categoría/unidad/línea/puesto. No expone datos individuales.';
 
 -- ---------------------------------------------------------------------
--- Comparación de un jugador contra su categoría y puesto en el tiempo.
+-- Comparación de un jugador contra su categoría, unidad (forwards/backs),
+-- línea y puesto en el tiempo. Con planteles chicos el puesto rara vez
+-- llega a n ≥ 3: la línea es la referencia posicional más útil.
 -- z > 0 SIEMPRE significa "mejor que el promedio" (se invierte el signo
 -- en métricas donde menos es mejor, p.ej. sprint).
 -- security invoker: si el usuario no puede ver al jugador, no devuelve filas.
@@ -211,6 +213,8 @@ returns table (
   z_category        numeric,
   unit_mean         numeric,
   z_unit            numeric,
+  line_mean         numeric,
+  z_line            numeric,
   position_mean     numeric,
   position_n        integer,
   z_position        numeric
@@ -242,6 +246,9 @@ as $$
     bu.mean,
     case when bu.sd > 0 then round(
       (s.value - bu.mean) / bu.sd * case when s.higher_is_better then 1 else -1 end, 2) end,
+    bl.mean,
+    case when bl.sd > 0 then round(
+      (s.value - bl.mean) / bl.sd * case when s.higher_is_better then 1 else -1 end, 2) end,
     bp.mean, bp.n,
     case when bp.sd > 0 then round(
       (s.value - bp.mean) / bp.sd * case when s.higher_is_better then 1 else -1 end, 2) end
@@ -251,6 +258,8 @@ as $$
                     and bc.group_type = 'category'
   left join bench bu on bu.season_id = s.season_id and bu.category_id = s.category_id
                     and bu.group_type = 'unit' and bu.group_key = pos.unit::text
+  left join bench bl on bl.season_id = s.season_id and bl.category_id = s.category_id
+                    and bl.group_type = 'line' and bl.group_key = pos.line::text
   left join bench bp on bp.season_id = s.season_id and bp.category_id = s.category_id
                     and bp.group_type = 'position' and bp.group_key = s.position_id::text
   order by s.session_date

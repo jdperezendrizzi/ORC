@@ -159,7 +159,7 @@ select rls_t.eq((select count(*) from v_session_best where player_id = 'b1000000
 select rls_t.eq((select count(*) from results where player_id = 'b1000000-0000-4000-8000-0000000000b1'), 0, 'coach_a no ve resultados de Cat B');
 select rls_t.eq((select count(*) from evaluation_sessions where id = '5a000000-0000-4000-8000-00000000000b'), 0, 'coach_a no ve sesión de Cat B');
 select rls_t.eq((select count(*) from wellness_logs where player_id = 'b1000000-0000-4000-8000-0000000000b1'), 0, 'coach_a no ve wellness de Cat B');
-select rls_t.eq((select count(*) from injuries), 1, 'coach_a ve la lesión de su jugador');
+select rls_t.eq((select count(*) from injuries where player_id in (select id from players where last_name = 'RLS')), 1, 'coach_a ve la lesión de su jugador');
 select rls_t.eq((select count(*) from player_comparison('b1000000-0000-4000-8000-0000000000a1', '78000000-0000-4000-8000-000000000001')), 2, 'comparación de su jugador');
 select rls_t.eq((select count(*) from player_comparison('b1000000-0000-4000-8000-0000000000b1', '78000000-0000-4000-8000-000000000001')), 0, 'comparación de jugador ajeno vacía');
 
@@ -228,7 +228,7 @@ set local role authenticated;
 select rls_t.login('d0000000-0000-4000-8000-000000000001');
 select rls_t.eq((select count(*) from players where last_name = 'RLS'), 3, 'medical ve todos');
 select rls_t.eq((select count(*) from player_private where player_id = 'b1000000-0000-4000-8000-0000000000a1'), 1, 'medical ve datos privados');
-select rls_t.eq((select count(*) from injury_notes), 1, 'medical ve notas clínicas');
+select rls_t.eq((select count(*) from injury_notes where injury_id = '1e000000-0000-4000-8000-000000000001'), 1, 'medical ve notas clínicas');
 select rls_t.eq(rls_t.affected($$update injuries set status = 'rehab' where id = '1e000000-0000-4000-8000-000000000001'$$), 1, 'medical gestiona lesiones');
 select rls_t.throws($$insert into results (session_id, player_id, metric_id, value) values
   ('5a000000-0000-4000-8000-00000000000a', 'b1000000-0000-4000-8000-0000000000a1', '78000000-0000-4000-8000-000000000001', 1.7)$$,

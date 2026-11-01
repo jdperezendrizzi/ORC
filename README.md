@@ -28,3 +28,20 @@ supabase db reset          # migraciones + seed
 # Sin Docker (Postgres local cualquiera)
 PGHOST=localhost PGPORT=5432 PGUSER=postgres scripts/db/verify.sh
 ```
+
+## Datos
+
+* **Catálogo de referencia** (`migrations/*_reference_catalog.sql`): 15 puestos, tipos de consentimiento y 15 tests / 41 métricas con rangos de plausibilidad. Va como migración porque producción también lo necesita.
+* **`seed.sql`** (solo local): temporada 2026, categorías M12–Primera y datos **ficticios** de demo con semilla fija: 45 jugadores (M15, M17 y Primera), 2 testeos y 1 partido por categoría, 6 semanas de bienestar y 3 lesiones de ejemplo.
+
+### Usuarios demo (contraseña `orc-demo-2026`)
+
+| Email | Rol |
+|---|---|
+| admin@orc.test | admin |
+| profe.m15@orc.test | coach M15 |
+| profe.m17@orc.test | coach M17 |
+| profe.primera@orc.test | coach Primera + Intermedia |
+| medico@orc.test | medical |
+
+Casos para probar en la app: el último jugador de M15 tiene **revocado el consentimiento de salud** (debe bloquear la carga de lesiones) y en M15 no hay datos de fuerza (son menores de 16).
