@@ -85,3 +85,21 @@ export const lineLabel: Record<string, string> = {
 export function formatDate(iso: string, opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" }) {
   return new Date(`${iso.slice(0, 10)}T12:00:00`).toLocaleDateString("es-AR", opts);
 }
+
+export const injuryContextLabel: Record<string, string> = {
+  match: "Partido",
+  training: "Entrenamiento",
+  other: "Otro",
+};
+
+export const injuryMechanismLabel: Record<string, string> = {
+  contact: "Con contacto",
+  non_contact: "Sin contacto",
+  overuse: "Sobrecarga",
+  unknown: "No se sabe",
+};
+
+export const sideLabel: Record<string, string> = { left: "Izquierdo", right: "Derecho", both: "Ambos" };
+
+/** Orden del seguimiento de una lesión. */
+export const INJURY_STATUS_FLOW = ["active", "rehab", "return_to_play", "closed"] as const;

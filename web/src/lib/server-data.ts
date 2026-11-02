@@ -57,3 +57,7 @@ export const roleLabel: Record<string, string> = {
   player: "Jugador",
   guardian: "Familia",
 };
+
+/** Área médica y admin gestionan lesiones (estado, alta, notas clínicas). */
+export const canManageInjuries = (p: Profile | null) => !!p?.active && (p.role === "admin" || p.role === "medical");
+export const isStaff = (p: Profile | null) => !!p?.active && ["admin", "coach", "medical"].includes(p.role);

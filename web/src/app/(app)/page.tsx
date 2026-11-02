@@ -123,7 +123,7 @@ export default async function HomePage() {
           <ul className="card divide-y divide-orc-line p-0">
             {injuries.map((i) => (
               <li key={i.id}>
-                <a href={`/jugadores/${i.player_id}`} className="flex items-center justify-between gap-3 px-4 py-3">
+                <a href={`/lesiones/${i.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-orc-orange-soft">
                   <span>
                     <span className="font-semibold">
                       {i.player?.first_name} {i.player?.last_name}

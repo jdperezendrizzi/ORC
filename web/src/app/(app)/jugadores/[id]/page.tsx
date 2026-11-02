@@ -342,13 +342,19 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 
       {/* Lesiones */}
       <section className="card">
-        <h2 className="font-bold">Historial de lesiones</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-bold">Historial de lesiones</h2>
+          <a href={`/lesiones/nueva?jugador=${id}`} className="text-sm font-semibold text-orc-orange-strong">
+            + Registrar lesión
+          </a>
+        </div>
         {injuries.length === 0 ? (
           <p className="mt-2 text-sm text-orc-muted">Sin lesiones registradas.</p>
         ) : (
           <ul className="mt-2 divide-y divide-orc-line">
             {injuries.map((i) => (
-              <li key={i.id} className="flex items-start justify-between gap-3 py-2 text-sm">
+              <li key={i.id}>
+                <a href={`/lesiones/${i.id}`} className="flex items-start justify-between gap-3 py-2 text-sm hover:bg-orc-orange-soft">
                 <span>
                   <span className="font-semibold">
                     {injuryTypeLabel[i.injury_type]} · {bodyRegionLabel[i.body_region]}
@@ -360,6 +366,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
                   </span>
                 </span>
                 <span className={`chip shrink-0 ${injuryStatusTone[i.status]}`}>{injuryStatusLabel[i.status]}</span>
+                </a>
               </li>
             ))}
           </ul>
