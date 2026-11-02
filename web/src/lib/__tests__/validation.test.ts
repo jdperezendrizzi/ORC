@@ -35,3 +35,12 @@ describe("formatInput", () => {
     expect(parseMetricValue(formatInput(1.8, 2), sprint)).toEqual({ ok: true, value: 1.8 });
   });
 });
+
+import { clubToday } from "../validation";
+describe("clubToday", () => {
+  it("usa la fecha de Argentina aunque el servidor esté en UTC", () => {
+    // 2026-11-02 01:30 UTC = 2026-11-01 22:30 en Buenos Aires
+    expect(clubToday(new Date("2026-11-02T01:30:00Z"))).toBe("2026-11-01");
+    expect(clubToday(new Date("2026-11-02T03:30:00Z"))).toBe("2026-11-02");
+  });
+});

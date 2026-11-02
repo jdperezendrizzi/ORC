@@ -104,7 +104,10 @@ export default async function AdminPlayers({
         <button type="submit" className="btn-ghost h-10">
           Filtrar
         </button>
-        <Link href="/admin/jugadores/nuevo" className="btn-primary h-10 sm:ml-auto">
+        <Link href="/admin/jugadores/importar" className="btn-ghost h-10 sm:ml-auto">
+          Importar Excel
+        </Link>
+        <Link href="/admin/jugadores/nuevo" className="btn-primary h-10">
           + Nuevo jugador
         </Link>
       </form>

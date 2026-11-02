@@ -66,9 +66,12 @@ export default async function AdminHome() {
         )}
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className="grid gap-3 sm:grid-cols-4">
         <Link href="/admin/jugadores/nuevo" className="btn-primary h-14">
           + Nuevo jugador
+        </Link>
+        <Link href="/admin/jugadores/importar" className="btn-ghost h-14">
+          Importar plantel (Excel)
         </Link>
         <Link href="/admin/usuarios" className="btn-ghost h-14">
           {canInviteByEmail() ? "Invitar profe o médico" : "Usuarios y permisos"}

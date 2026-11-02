@@ -73,7 +73,8 @@ Proyecto `orc-rendimiento` (plan free, región `sa-east-1`) con las 9 migracione
 
 ### Pantallas de admin (`/admin`)
 
-Sólo para usuarios con rol admin. Jugadores (alta, edición, categoría y camiseta de la temporada, baja), tutores,
+Sólo para usuarios con rol admin. Jugadores (alta, edición, categoría y camiseta de la temporada, baja,
+**importación desde Excel/CSV** en `/admin/jugadores/importar`), tutores,
 consentimientos (registrar y revocar), datos privados y de emergencia, usuarios (rol, activo, categorías a cargo) y
 temporadas.
 

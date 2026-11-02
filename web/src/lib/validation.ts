@@ -54,7 +54,16 @@ export function localDate(d = new Date()): string {
   return new Date(d.getTime() - off * 60_000).toISOString().slice(0, 10);
 }
 
-export function ageOn(birthDate: string, on: string = localDate()): number {
+/**
+ * "Hoy" en la zona horaria del club. En el servidor (Vercel corre en UTC)
+ * localDate() da el día siguiente a partir de las 21 h de Argentina.
+ */
+export const CLUB_TIME_ZONE = "America/Argentina/Buenos_Aires";
+export function clubToday(d = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: CLUB_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+}
+
+export function ageOn(birthDate: string, on: string = clubToday()): number {
   // slice: tolera "2009-05-01" y "2009-05-01T03:00:00Z"
   const b = new Date(`${birthDate.slice(0, 10)}T00:00:00`);
   const d = new Date(`${on.slice(0, 10)}T00:00:00`);

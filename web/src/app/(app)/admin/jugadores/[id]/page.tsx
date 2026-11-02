@@ -4,7 +4,7 @@ import { ActionForm, InlineAction } from "@/components/action-form";
 import { Collapsible } from "@/components/collapsible";
 import { CONSENT_TYPES, loadCatalog, requireAdmin } from "@/lib/admin";
 import { formatDate } from "@/lib/labels";
-import { ageOn, localDate } from "@/lib/validation";
+import { ageOn, clubToday } from "@/lib/validation";
 import {
   addGuardian,
   registerConsent,
@@ -75,7 +75,7 @@ export default async function AdminPlayer({
   const active = new Map(consents.filter((c) => !c.revoked_at).map((c) => [c.consent_type as string, c]));
   const history = consents.filter((c) => c.revoked_at);
   const priv = privRes.data;
-  const age = ageOn(player.birth_date as string);
+  const age = ageOn(player.birth_date as string, clubToday());
   const minor = age < 18;
   const pending = CONSENT_TYPES.filter((t) => !active.has(t.code));
 
@@ -297,7 +297,7 @@ export default async function AdminPlayer({
                     </select>
                   </Field>
                   <Field label="Fecha de firma" id="c_date">
-                    <input id="c_date" name="granted_on" type="date" required defaultValue={localDate()} max={localDate()} className="field-input" />
+                    <input id="c_date" name="granted_on" type="date" required defaultValue={clubToday()} max={clubToday()} className="field-input" />
                   </Field>
                   <Field label="Versión del documento" id="c_version" help="Para saber qué texto firmó si el formulario cambia.">
                     <input id="c_version" name="document_version" defaultValue={`${season?.name ?? "2026"}-v1`} className="field-input" />

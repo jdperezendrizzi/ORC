@@ -339,3 +339,31 @@ export async function setCurrentSeason(_: ActionResult, f: FormData): Promise<Ac
   revalidatePath("/");
   return { ok: "Temporada actual cambiada." };
 }
+
+// ---------------------------------------------------------------------
+// Importación de plantel (Excel/CSV)
+// ---------------------------------------------------------------------
+export interface ImportOutcome {
+  ok?: { created: number; updated: number; guardians: number; consents: number };
+  error?: string;
+}
+
+export async function importRoster(rows: unknown[], documentVersion: string): Promise<ImportOutcome> {
+  const { supabase, season } = await requireAdmin();
+  if (!season) return { error: "No hay temporada actual: creala en Temporada antes de importar." };
+  if (!Array.isArray(rows) || rows.length === 0) return { error: "No hay filas válidas para importar." };
+  if (rows.length > 1000) return { error: "Máximo 1000 jugadores por importación." };
+  const { data, error } = await supabase.rpc("import_roster", {
+    p_season_id: season.id,
+    p_rows: rows,
+    p_document_version: documentVersion.trim() || `${season.name}-v1`,
+  });
+  if (error) {
+    const r = dbError(error, "No se pudo importar.");
+    // El mensaje de la base ya indica la fila ("Fila 12: ...").
+    return { error: /^Fila \d+:/.test(error.message) ? `${error.message}. No se importó nada: corregí esa fila y probá de nuevo.` : r.error };
+  }
+  revalidatePath("/admin");
+  revalidatePath("/admin/jugadores");
+  return { ok: data as ImportOutcome["ok"] };
+}
