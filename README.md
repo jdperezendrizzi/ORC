@@ -70,3 +70,18 @@ Proyecto `orc-rendimiento` (plan free, región `sa-east-1`) con las 9 migracione
 1. Importar el repo en Vercel con **Root Directory = `web`**.
 2. Variables de entorno: `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publishable key).
 3. En Supabase → Authentication → URL Configuration, poner la URL de Vercel como *Site URL*.
+
+### Pantallas de admin (`/admin`)
+
+Sólo para usuarios con rol admin. Jugadores (alta, edición, categoría y camiseta de la temporada, baja), tutores,
+consentimientos (registrar y revocar), datos privados y de emergencia, usuarios (rol, activo, categorías a cargo) y
+temporadas.
+
+Para **invitar usuarios por email desde la app** hace falta, una sola vez:
+
+1. Vercel → Settings → Environment Variables: `SUPABASE_SERVICE_ROLE_KEY` = la *secret key* de Supabase
+   (Settings → API Keys). Es secreta: **nunca** con prefijo `NEXT_PUBLIC_` ni en el repo. Redeploy.
+2. Supabase → Authentication → URL Configuration → *Redirect URLs*: agregar `https://<tu-app>.vercel.app/cuenta/clave`.
+
+Sin la variable, la pantalla de usuarios explica cómo crear la cuenta desde Supabase y activarla en la app.
+El plan gratis de Supabase limita los emails de autenticación por hora.

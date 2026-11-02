@@ -6,6 +6,7 @@ import { canLoadResults, getViewer, roleLabel } from "@/lib/server-data";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile } = await getViewer();
   const canLoad = canLoadResults(profile);
+  const isAdmin = !!profile?.active && profile.role === "admin";
 
   return (
     <SyncProvider>
@@ -19,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </span>
           </a>
           <div className="ml-4 flex-1">
-            <TopNav canLoad={canLoad} />
+            <TopNav canLoad={canLoad} isAdmin={isAdmin} />
           </div>
           <ThemeToggle />
           <SyncBadge />
@@ -50,7 +51,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <LogoutButton />
             </span>
           </footer>
-          <BottomNav canLoad={canLoad} />
+          <BottomNav canLoad={canLoad} isAdmin={isAdmin} />
           <PrecacheFieldPages />
         </>
       )}

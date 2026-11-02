@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/offline"];
+const PUBLIC_PATHS = ["/login", "/offline", "/cuenta/clave"];
 
 /** Refresca la sesión de Supabase y exige login en todas las rutas privadas. */
 export async function middleware(request: NextRequest) {

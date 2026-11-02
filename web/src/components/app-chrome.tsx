@@ -20,6 +20,13 @@ const icons = {
     <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" />
   ),
   load: <path d="M12 5v14M5 12h14" />,
+  admin: (
+    <>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20a7 7 0 0 1 14 0" />
+      <path d="M18.5 3.5l1 1.7 1.9.4-1.3 1.4.2 1.9-1.8-.8-1.8.8.2-1.9-1.3-1.4 1.9-.4z" />
+    </>
+  ),
   wellness: (
     <path d="M12 20s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 10c0 5.65-7 10-7 10z" />
   ),
@@ -33,11 +40,12 @@ function Icon({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function navItems(canLoad: boolean): NavItem[] {
+export function navItems(canLoad: boolean, isAdmin = false): NavItem[] {
   return [
     { href: "/", label: "Inicio", icon: <Icon>{icons.home}</Icon> },
     ...(canLoad ? [{ href: "/cargar", label: "Cargar", icon: <Icon>{icons.load}</Icon> }] : []),
     { href: "/bienestar", label: "Bienestar", icon: <Icon>{icons.wellness}</Icon> },
+    ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: <Icon>{icons.admin}</Icon> }] : []),
   ];
 }
 
@@ -45,11 +53,11 @@ function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
-export function TopNav({ canLoad }: { canLoad: boolean }) {
+export function TopNav({ canLoad, isAdmin = false }: { canLoad: boolean; isAdmin?: boolean }) {
   const pathname = usePathname();
   return (
     <nav className="hidden items-center gap-1 md:flex" aria-label="Principal">
-      {navItems(canLoad).map((i) => (
+      {navItems(canLoad, isAdmin).map((i) => (
         <a
           key={i.href}
           href={i.href}
@@ -64,9 +72,9 @@ export function TopNav({ canLoad }: { canLoad: boolean }) {
   );
 }
 
-export function BottomNav({ canLoad }: { canLoad: boolean }) {
+export function BottomNav({ canLoad, isAdmin = false }: { canLoad: boolean; isAdmin?: boolean }) {
   const pathname = usePathname();
-  const items = navItems(canLoad);
+  const items = navItems(canLoad, isAdmin);
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-orc-black pb-[env(safe-area-inset-bottom)] md:hidden"
