@@ -52,7 +52,9 @@ Casos para probar en la app: el último jugador de M15 tiene **revocado el conse
 
 ## Proyecto en la nube (Supabase)
 
-Proyecto `orc-rendimiento` (plan free, región `sa-east-1`) con las 9 migraciones aplicadas y los datos de demo cargados.
+Proyecto `orc-rendimiento` (plan free, región `sa-east-1`) con todas las migraciones aplicadas y los datos de demo cargados.
+
+* **App publicada (demo):** https://orc-web-phi.vercel.app
 
 * URL: `https://xcpoczzznnexjkbthpyb.supabase.co`
 * Clave pública: la *publishable key* del panel (Settings → API). Es pública por diseño; la seguridad la da RLS.
