@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { PlayerEvolution, ZBar, type MetricSeries } from "@/components/player-charts";
 import { HowToRead, InfoHeader } from "@/components/info";
 import { CONCEPTS, DOMAIN_INFO, METRIC_INFO } from "@/lib/glossary";
+import { ShareReportButton } from "@/components/share-report";
+import { reportMetrics, type ReportData } from "@/lib/report/player-report";
+import { clubToday } from "@/lib/validation";
 import { getViewer } from "@/lib/server-data";
 import {
   bodyRegionLabel,
@@ -32,7 +35,7 @@ const consentLabel: Record<string, string> = {
 
 export default async function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { supabase, season } = await getViewer();
+  const { supabase, season, profile } = await getViewer();
 
   const { data: player } = await supabase
     .from("players")
@@ -128,6 +131,38 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
     byDomain.set(s.domain, [...(byDomain.get(s.domain) ?? []), s]);
   }
 
+  // Informe para compartir: sólo rendimiento; menores necesitan el
+  // consentimiento "Acceso de la familia" (la base lo vuelve a verificar).
+  const report: ReportData = {
+    playerName: `${player.first_name} ${String(player.last_name).replace(" (demo)", "")}`,
+    subtitle: [psc?.category?.name, position?.name, `${age} años`].filter(Boolean).join(" · "),
+    seasonName: season?.name ?? "",
+    issuedBy: profile?.full_name ?? "",
+    issuedOn: clubToday(),
+    minor: age < 18,
+    metrics: reportMetrics(
+      series.map((s) => ({
+        code: s.code,
+        name: s.name,
+        unit: s.unit,
+        decimals: s.decimals,
+        higherIsBetter: s.higherIsBetter,
+        domain: s.domain,
+        series: s.series.map((p) => ({
+          date: p.session_date,
+          value: Number(p.value),
+          z: p.z_category === null ? null : Number(p.z_category),
+        })),
+      })),
+    ),
+  };
+  const shareBlocked =
+    age < 18 && !activeConsents.has("data_sharing_family")
+      ? "Para compartir el informe de un menor hace falta el consentimiento «Acceso de la familia» firmado por el tutor. Lo registra el admin."
+      : report.metrics.length === 0
+        ? "Todavía no hay evaluaciones de rendimiento para armar el informe."
+        : null;
+
   return (
     <div className="space-y-6">
       {/* Encabezado */}
@@ -160,6 +195,9 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
               {activeConsents.has(code) ? "✓" : "✕"} {label}
             </span>
           ))}
+        </div>
+        <div className="border-t border-white/10 px-4 py-3">
+          <ShareReportButton playerId={id} data={report} blockedReason={shareBlocked} />
         </div>
       </header>
 

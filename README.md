@@ -86,3 +86,14 @@ Para **invitar usuarios por email desde la app** hace falta, una sola vez:
 
 Sin la variable, la pantalla de usuarios explica cómo crear la cuenta desde Supabase y activarla en la app.
 El plan gratis de Supabase limita los emails de autenticación por hora.
+
+### Compartir y exportar
+
+* **Informe del jugador en PDF** (perfil del jugador → *Compartir informe*): en el celular abre el menú de compartir
+  (WhatsApp, mail…); en la compu se descarga. Incluye **sólo rendimiento** (fuerza, velocidad, potencia, agilidad,
+  resistencia y partido): sin antropometría, bienestar, lesiones ni datos personales.
+* **Menores**: sólo con el consentimiento «Acceso de la familia» vigente. Lo verifica la base
+  (`authorize_player_report`), no sólo la pantalla.
+* **Exportar Excel** de la categoría (página de la categoría): mejores marcas de rendimiento de la temporada, para uso
+  interno del staff.
+* Todo queda registrado en `share_log` (quién, cuándo, qué jugador o categoría).

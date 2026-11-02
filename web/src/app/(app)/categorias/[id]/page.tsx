@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getViewer } from "@/lib/server-data";
+import { ExportCategoryButton } from "@/components/share-report";
 import { formatDate, injuryStatusLabel, injuryStatusTone, sessionTypeLabel } from "@/lib/labels";
 import { ageOn, formatValue } from "@/lib/validation";
 import type { Category, Position } from "@/lib/types";
@@ -82,9 +83,12 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
             {roster.length} jugadores · temporada {season.name}
           </p>
         </div>
-        <a href={`/cargar?categoria=${category.id}`} className="btn-primary">
-          + Cargar
-        </a>
+        <div className="flex flex-wrap items-start justify-end gap-2">
+          <ExportCategoryButton categoryId={category.id} />
+          <a href={`/cargar?categoria=${category.id}`} className="btn-primary">
+            + Cargar
+          </a>
+        </div>
       </header>
 
       <section className="card overflow-x-auto p-0">
