@@ -2,6 +2,7 @@
 
 import { getViewer } from "@/lib/server-data";
 import { REPORT_DOMAINS } from "@/lib/report/player-report";
+import { fetchAll } from "@/lib/fetch-all";
 
 /** Pide a la base autorización para compartir el informe (y lo registra). */
 export async function authorizeReport(playerId: string): Promise<{ ok: true } | { error: string }> {
@@ -57,14 +58,20 @@ export async function exportCategory(
   const pos = new Map((positionsRes.data ?? []).map((p) => [p.id as number, p.short_name as string]));
 
   const ids = roster.map((r) => r.player.id);
-  const { data: bests } = ids.length
-    ? await supabase
-        .from("v_player_season_best")
-        .select("player_id, metric_id, value")
-        .eq("season_id", season.id)
-        .in("player_id", ids)
-    : { data: [] };
-  const best = new Map((bests ?? []).map((b) => [`${b.player_id}:${b.metric_id}`, Number(b.value)]));
+  // Paginado: con planteles grandes supera las 1000 filas que devuelve Supabase por consulta.
+  const bests = ids.length
+    ? await fetchAll<{ player_id: string; metric_id: string; value: number }>(
+        () =>
+          supabase
+            .from("v_player_season_best")
+            .select("player_id, metric_id, value")
+            .eq("season_id", season.id)
+            .in("player_id", ids)
+            .order("player_id")
+            .order("metric_id") as never,
+      )
+    : [];
+  const best = new Map(bests.map((b) => [`${b.player_id}:${b.metric_id}`, Number(b.value)]));
   const used = metrics.filter((m) => ids.some((id) => best.has(`${id}:${m.id}`)));
 
   const headers = ["Apellido", "Nombre", "Camiseta", "Puesto", "Nacimiento", ...used.map((m) => `${m.name} (${m.unit})`)];

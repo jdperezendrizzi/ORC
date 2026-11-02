@@ -1,4 +1,6 @@
 import { LogoutButton } from "@/components/app-chrome";
+import { TeamDashboard } from "@/components/team-dashboard";
+import { loadDashboard } from "@/lib/dashboard-server";
 import { canLoadResults, getViewer, getViewerCategories, roleLabel } from "@/lib/server-data";
 import { formatDate, injuryStatusLabel, injuryStatusTone, sessionTypeLabel } from "@/lib/labels";
 
@@ -38,6 +40,7 @@ export default async function HomePage() {
       .limit(6),
   ]);
 
+  const dashboard = await loadDashboard(supabase, season, categories);
   const roster = rosterRes.data ?? [];
   const playerCategory = new Map(roster.map((r) => [r.player_id as string, r.category_id as string]));
   type InjuryRow = {
@@ -70,6 +73,8 @@ export default async function HomePage() {
           </a>
         </section>
       )}
+
+      <TeamDashboard data={dashboard} />
 
       <a href="/guia" className="card flex items-center gap-3 py-3 hover:border-orc-orange">
         <span className="grid size-9 shrink-0 place-items-center rounded-full bg-orc-orange-soft text-lg font-black text-orc-orange-strong">
