@@ -1,6 +1,6 @@
 // Sincronización de la outbox con Supabase.
 //
-// * Orden: sesiones → resultados → bienestar (por las FK).
+// * Orden: sesiones → resultados → bienestar → lesiones (por las FK).
 // * Upsert por lotes con onConflict=id (idempotente).
 // * Si un lote falla por validación, se reintenta fila por fila para aislar
 //   la fila problemática y dejar pasar el resto.
@@ -24,7 +24,7 @@ export type Uploader = (
   rows: Record<string, unknown>[],
 ) => Promise<{ error: UpsertError | null }>;
 
-const TABLE_ORDER: OutboxTable[] = ["evaluation_sessions", "results", "wellness_logs"];
+const TABLE_ORDER: OutboxTable[] = ["evaluation_sessions", "results", "wellness_logs", "injuries"];
 const BATCH_SIZE = 200;
 
 export interface SyncReport {

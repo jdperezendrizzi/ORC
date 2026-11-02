@@ -37,7 +37,11 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       const supabase = supabaseBrowser();
       const upload: Uploader = async (table, rows) => {
         try {
-          const { error } = await supabase.from(table).upsert(rows, { onConflict: "id" });
+          // Lesiones: el profe sólo puede crearlas (no editarlas), así que el
+          // reenvío usa ON CONFLICT DO NOTHING (no requiere permiso de edición).
+          const { error } = await supabase
+            .from(table)
+            .upsert(rows, { onConflict: "id", ignoreDuplicates: table === "injuries" });
           return { error: error ? { message: error.message, code: error.code, hint: error.hint, details: error.details } : null };
         } catch (e) {
           return { error: { message: e instanceof Error ? e.message : String(e) } };

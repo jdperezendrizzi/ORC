@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PendingInjuries } from "@/components/pending-injuries";
 import { getViewer, getViewerCategories } from "@/lib/server-data";
 import { bodyRegionLabel, formatDate, injuryContextLabel, injuryStatusLabel, injuryStatusTone, injuryTypeLabel } from "@/lib/labels";
 import { clubToday } from "@/lib/validation";
@@ -108,6 +109,8 @@ export default async function InjuriesPage({ searchParams }: { searchParams: Pro
           </Link>
         </div>
       </header>
+
+      <PendingInjuries />
 
       <section className="space-y-2">
         <h2 className="text-sm font-bold uppercase tracking-wide text-orc-muted">Activas</h2>

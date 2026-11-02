@@ -83,6 +83,36 @@ describe("sync", () => {
   });
 });
 
+describe("lesiones sin señal", () => {
+  it("se suben al final (después de sesiones/resultados/bienestar) y se reintentan sin duplicar", async () => {
+    await enqueue("injuries", { id: "i1", player_id: "p1" });
+    await enqueue("wellness_logs", { id: "w1", player_id: "p1" });
+    const calls: string[] = [];
+    let fail = true;
+    const upload: Uploader = async (table) => {
+      calls.push(table);
+      if (table === "injuries" && fail) return { error: { message: "Failed to fetch", code: "" } };
+      return { error: null };
+    };
+    const first = await syncOutbox(upload);
+    expect(calls).toEqual(["wellness_logs", "injuries"]);
+    expect(first.pending).toBe(1);
+    expect((await listOutbox()).map((i) => i.key)).toEqual(["injuries:i1"]);
+    fail = false;
+    const second = await syncOutbox(upload);
+    expect(second.synced).toBe(1);
+    expect(await listOutbox()).toHaveLength(0);
+  });
+
+  it("sin consentimiento de salud queda en error con mensaje claro", async () => {
+    await enqueue("injuries", { id: "i2", player_id: "p2" });
+    await syncOutbox(async () => ({ error: { message: "Falta consentimiento", code: "P0001", hint: "consent_required" } }));
+    const [item] = await listOutbox();
+    expect(item.status).toBe("error");
+    expect(item.error).toMatch(/consentimiento/);
+  });
+});
+
 describe("clasificación de errores", () => {
   it("red / JWT vencido son transitorios; datos y permisos no", () => {
     expect(isTransient({ message: "Failed to fetch", code: "" })).toBe(true);
