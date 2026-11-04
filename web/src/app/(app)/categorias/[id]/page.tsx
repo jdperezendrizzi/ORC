@@ -1,5 +1,11 @@
 import { notFound } from "next/navigation";
-import { getViewer } from "@/lib/server-data";
+import { getViewer, isStaff } from "@/lib/server-data";
+import { AlertsList } from "@/components/alerts-list";
+import { WeeklySummaryCard, type WeeklySummaryView } from "@/components/weekly-summary";
+import { computeAlerts, withNames } from "@/lib/alerts";
+import { loadAlertInput } from "@/lib/alerts-server";
+import { aiConfigured } from "@/lib/ai";
+import { generateWeeklySummary } from "./summary-actions";
 import { ExportCategoryButton } from "@/components/share-report";
 import { formatDate, injuryStatusLabel, injuryStatusTone, sessionTypeLabel } from "@/lib/labels";
 import { ageOn, formatValue } from "@/lib/validation";
@@ -17,7 +23,7 @@ const SUMMARY_METRICS = [
 
 export default async function CategoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { supabase, season } = await getViewer();
+  const { supabase, season, profile } = await getViewer();
   if (!season) notFound();
 
   const { data: category } = await supabase
@@ -69,6 +75,37 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
   const best = new Map((bests ?? []).map((b) => [`${b.player_id}:${b.metric_code}`, Number(b.value)]));
   const injury = new Map((injuriesRes.data ?? []).map((i) => [i.player_id as string, i.status as string]));
   const consents = consentsRes.data ?? [];
+
+  // Alertas y resumen semanal (sólo cuerpo técnico)
+  const staff = isStaff(profile);
+  const alertInput = staff ? await loadAlertInput(supabase, season, [category]) : null;
+  const alerts = alertInput ? computeAlerts(alertInput) : [];
+  const names = new Map(roster.map((r) => [r.player.id, `${r.player.last_name}, ${r.player.first_name}`]));
+  let summary: WeeklySummaryView | null = null;
+  if (staff) {
+    const { data: s } = await supabase
+      .from("weekly_summaries")
+      .select("content, player_codes, period_from, period_to, generator, generated_at")
+      .eq("category_id", id)
+      .order("week_start", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (s) {
+      const when = new Date(s.generated_at as string).toLocaleString("es-AR", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "America/Argentina/Buenos_Aires",
+      });
+      summary = {
+        text: withNames(s.content as string, (s.player_codes ?? {}) as Record<string, string>, names),
+        periodLabel: `${formatDate(s.period_from as string)} al ${formatDate(s.period_to as string)}`,
+        generatedLabel: `generado ${when}`,
+        byAi: String(s.generator).startsWith("groq:"),
+      };
+    }
+  }
   const has = (pid: string, type: string) => consents.some((c) => c.player_id === pid && c.consent_type === type);
 
   return (
@@ -90,6 +127,19 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
           </a>
         </div>
       </header>
+
+      {staff && (
+        <>
+          <WeeklySummaryCard
+            categoryId={category.id}
+            categoryName={category.name}
+            summary={summary}
+            action={generateWeeklySummary}
+            aiEnabled={aiConfigured()}
+          />
+          <AlertsList alerts={alerts} names={names} />
+        </>
+      )}
 
       <section className="card overflow-x-auto p-0">
         <table className="w-full min-w-[640px] text-sm">

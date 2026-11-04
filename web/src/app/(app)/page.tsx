@@ -1,7 +1,10 @@
 import { LogoutButton } from "@/components/app-chrome";
 import { TeamDashboard } from "@/components/team-dashboard";
 import { loadDashboard } from "@/lib/dashboard-server";
-import { canLoadResults, getViewer, getViewerCategories, roleLabel } from "@/lib/server-data";
+import { AlertsList } from "@/components/alerts-list";
+import { computeAlerts } from "@/lib/alerts";
+import { loadAlertInput } from "@/lib/alerts-server";
+import { canLoadResults, getViewer, getViewerCategories, isStaff, roleLabel } from "@/lib/server-data";
 import { formatDate, injuryStatusLabel, injuryStatusTone, sessionTypeLabel } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +44,8 @@ export default async function HomePage() {
   ]);
 
   const dashboard = await loadDashboard(supabase, season, categories);
+  const alerts = isStaff(profile) ? computeAlerts(await loadAlertInput(supabase, season, categories, dashboard)) : [];
+  const playerNames = new Map(dashboard.players.map((p) => [p.id, p.name]));
   const roster = rosterRes.data ?? [];
   const playerCategory = new Map(roster.map((r) => [r.player_id as string, r.category_id as string]));
   type InjuryRow = {
@@ -74,6 +79,15 @@ export default async function HomePage() {
         </section>
       )}
 
+      {isStaff(profile) && (
+        <AlertsList
+          alerts={alerts}
+          names={playerNames}
+          categoryNames={categories.length > 1 ? new Map(categories.map((c) => [c.id, c.name])) : undefined}
+          visible={5}
+        />
+      )}
+
       <TeamDashboard data={dashboard} />
 
       <a href="/guia" className="card flex items-center gap-3 py-3 hover:border-orc-orange">
@@ -102,7 +116,7 @@ export default async function HomePage() {
                   </span>
                   <span className="flex-1">
                     <span className="block font-bold">{c.name}</span>
-                    <span className="text-sm text-orc-muted">{players.length} jugadores</span>
+                    <span className="text-sm text-orc-muted">{players.length} jugadores · resumen de la semana ›</span>
                   </span>
                   <span className="flex flex-col items-end gap-1">
                     {injured > 0 && <span className="chip tone-red">{injured} {injured === 1 ? "lesionado" : "lesionados"}</span>}

@@ -99,3 +99,17 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
 * **Exportar Excel** de la categoría (página de la categoría): mejores marcas de rendimiento de la temporada, para uso
   interno del staff.
 * Todo queda registrado en `share_log` (quién, cuándo, qué jugador o categoría).
+
+### Alertas y resumen semanal con IA
+
+* **Alertas** (Inicio y página de cada categoría, sólo cuerpo técnico). Reglas simples, sin IA (`web/src/lib/alerts.ts`):
+  regreso de lesión vencido · carga de 7 días ≥ 1,5× el promedio de 4 semanas · bienestar ≤ 12/25 en los últimos
+  3 registros · caída en un test físico (3 % en tiempos, 5 % en el resto) respecto de la medición anterior.
+* **Resumen de la semana** (página de la categoría → *Generar resumen*): últimos 7 días de bienestar, carga,
+  evaluaciones, mejoras, lesiones y alertas. Se guarda en `weekly_summaries` (uno por categoría y semana).
+* **Privacidad**: a la IA se le mandan **sólo números y códigos** (J1, J2…), nunca nombres ni zona de lesión. Los
+  nombres se ponen en la app al mostrarlo, con el RLS de quien lo mira. La tabla tampoco guarda nombres.
+* **IA gratis (Groq)**: crear una API key en <https://console.groq.com/keys> y cargarla en Vercel como
+  `GROQ_API_KEY` (sin `NEXT_PUBLIC_`), y redeploy. Opcional: `GROQ_MODEL` (por defecto `llama-3.3-70b-versatile`).
+  Sin clave, o si la IA falla, el resumen se arma con una plantilla con los mismos datos. Para cuidar el cupo gratis
+  no se regenera más de una vez cada 5 minutos por categoría.
