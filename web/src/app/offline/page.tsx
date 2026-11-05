@@ -7,7 +7,7 @@ export default function OfflinePage() {
       <img src="/crest.png" alt="" width={250} height={278} className="h-[90px] w-auto" />
       <h1 className="mt-6 text-xl font-bold">Sin conexión</h1>
       <p className="mt-2 max-w-xs text-white/70">
-        Esta página necesita señal. La carga de datos, el bienestar, los objetivos y el registro de lesiones funcionan sin conexión y se suben solos
+        Esta página necesita señal. La carga de datos, el bienestar, la práctica (asistencia y objetivos) y el registro de lesiones funcionan sin conexión y se suben solos
         cuando vuelve la señal.
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -17,8 +17,8 @@ export default function OfflinePage() {
         <a href="/bienestar" className="btn-ghost">
           Bienestar
         </a>
-        <a href="/objetivos" className="btn-ghost">
-          Objetivos
+        <a href="/practica" className="btn-ghost">
+          Práctica
         </a>
         <a href="/lesiones/nueva" className="btn-ghost">
           Registrar lesión

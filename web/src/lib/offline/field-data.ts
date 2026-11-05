@@ -19,6 +19,7 @@ import type {
 } from "../types";
 import { cacheGet, cachePut } from "./db";
 import { fetchAll } from "../fetch-all";
+import type { AttendanceRow } from "../attendance";
 
 export interface FieldData {
   profile: Profile;
@@ -263,4 +264,30 @@ export async function saveLocalObjectiveCheck(check: ObjectiveCheck): Promise<vo
   const cached = await loadCachedObjectives();
   if (!cached) return;
   await cachePut(OBJECTIVES_KEY, { ...cached, checks: [...cached.checks.filter((c) => c.id !== check.id), check] });
+}
+
+// ---------------------------------------------------------------------
+// Asistencia de una categoría en un día (para tomarla sin señal).
+// ---------------------------------------------------------------------
+const attendanceKey = (categoryId: string, date: string) => `attendance:${categoryId}:${date}`;
+
+export async function refreshAttendance(supabase: SupabaseClient, categoryId: string, date: string): Promise<AttendanceRow[]> {
+  const rows = must(
+    await supabase
+      .from("attendance")
+      .select("id, player_id, category_id, season_id, att_date, kind, status, note")
+      .eq("category_id", categoryId)
+      .eq("att_date", date),
+    "asistencia",
+  ) as AttendanceRow[];
+  await cachePut(attendanceKey(categoryId, date), rows);
+  return rows;
+}
+
+export async function loadCachedAttendance(categoryId: string, date: string): Promise<AttendanceRow[]> {
+  return (await cacheGet<AttendanceRow[]>(attendanceKey(categoryId, date)))?.data ?? [];
+}
+
+export async function saveCachedAttendance(categoryId: string, date: string, rows: AttendanceRow[]): Promise<void> {
+  await cachePut(attendanceKey(categoryId, date), rows);
 }

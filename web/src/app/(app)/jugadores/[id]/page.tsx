@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { ABSENCE_STREAK, absenceStreak, attendanceKindLabel, attendancePct, countByStatus, type AttendanceRow } from "@/lib/attendance";
 import { PlayerEvolution, ZBar, type MetricSeries } from "@/components/player-charts";
 import { HowToRead, InfoHeader } from "@/components/info";
 import { CONCEPTS, DOMAIN_INFO, METRIC_INFO } from "@/lib/glossary";
@@ -125,6 +126,21 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   const activeConsents = new Set((consRes.data ?? []).map((c) => c.consent_type as string));
   const acwr = (acwrRes.data?.[0] ?? null) as AcwrRow | null;
   const wellness = wellRes.data ?? [];
+
+  // Asistencia de la temporada (registro básico del club)
+  const { data: attData } = season
+    ? await supabase
+        .from("attendance")
+        .select("id, player_id, category_id, season_id, att_date, kind, status, note")
+        .eq("player_id", id)
+        .eq("season_id", season.id)
+        .order("att_date", { ascending: false })
+    : { data: [] };
+  const attendance = (attData ?? []) as AttendanceRow[];
+  const att = countByStatus(attendance);
+  const attPct = attendancePct(attendance);
+  const streak = absenceStreak(attendance);
+  const lastAbsences = attendance.filter((a) => a.status !== "present").slice(0, 5);
 
   const byDomain = new Map<string, MetricSeries[]>();
   for (const s of series.filter((s) => s.series.length > 0)) {
@@ -339,6 +355,35 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
           )}
         </section>
       </div>
+
+      {/* Asistencia */}
+      <section className="card space-y-2">
+        <h2 className="font-bold">Asistencia de la temporada</h2>
+        {attendance.length === 0 ? (
+          <p className="text-sm text-orc-muted">Todavía no se tomó asistencia.</p>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+              <span className="text-3xl font-black tabular-nums">{attPct ?? "—"}%</span>
+              <span className="text-sm text-orc-muted">
+                {att.present} presentes · {att.absent} ausentes · {att.excused} justificadas
+              </span>
+            </div>
+            {streak.count >= ABSENCE_STREAK && (
+              <p className="rounded-lg tone-amber px-3 py-2 text-sm">Faltó a las últimas {streak.count} prácticas sin justificar.</p>
+            )}
+            {lastAbsences.length > 0 && (
+              <p className="text-sm text-orc-muted">
+                Últimas faltas:{" "}
+                {lastAbsences
+                  .map((a) => `${formatDate(a.att_date)} (${a.status === "excused" ? "justificada" : "sin justificar"}${a.kind === "match" ? `, ${attendanceKindLabel.match.toLowerCase()}` : ""})`)
+                  .join(" · ")}
+              </p>
+            )}
+            <p className="text-xs text-orc-muted">Asistencia % = presentes sobre presentes + ausentes; las justificadas no cuentan.</p>
+          </>
+        )}
+      </section>
 
       {/* Lesiones */}
       <section className="card">

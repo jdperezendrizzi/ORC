@@ -2,7 +2,7 @@
 //
 // * Estáticos de Next (/_next/static, íconos): cache-first (tienen hash).
 // * Navegación (HTML): network-first. Sin señal: la copia guardada de las
-//   páginas de cancha (/, /cargar, /bienestar, /objetivos, /lesiones/nueva) y la guía,
+//   páginas de cancha (/, /cargar, /bienestar, /practica, /lesiones/nueva) y la guía,
 //   o si no hay, /offline.
 //   Los perfiles de jugadores y la lista de lesiones NO se guardan en el dispositivo.
 // * Las llamadas a Supabase NO pasan por acá: los datos offline viven en
@@ -11,11 +11,11 @@
 // Para que /cargar y /bienestar funcionen sin señal hay que abrirlas una vez
 // con señal (quedan guardadas). La app las precarga después del login.
 
-const VERSION = "orc-v5";
+const VERSION = "orc-v6";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGES_CACHE = `${VERSION}-pages`;
 const PRECACHE_PAGES = ["/offline"];
-const OFFLINE_PAGES = ["/", "/cargar", "/bienestar", "/objetivos", "/lesiones/nueva", "/guia"];
+const OFFLINE_PAGES = ["/", "/cargar", "/bienestar", "/practica", "/lesiones/nueva", "/guia"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

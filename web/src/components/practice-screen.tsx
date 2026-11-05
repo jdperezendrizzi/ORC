@@ -1,0 +1,95 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { clubToday } from "@/lib/validation";
+import { useFieldData } from "./use-field-data";
+import { useSync } from "./sync-provider";
+import { AttendanceTab } from "./attendance-tab";
+import { ObjectivesChecklist } from "./objectives-checklist";
+
+type Tab = "asistencia" | "objetivos";
+const CAN_USE = ["admin", "coach"];
+
+/** Práctica: asistencia (al empezar) y objetivos (al terminar). Funciona sin señal. */
+export function PracticeScreen() {
+  const { data, loading } = useFieldData();
+  const { online } = useSync();
+  const params = useSearchParams();
+  const today = clubToday();
+  const [tab, setTab] = useState<Tab>(params.get("tab") === "objetivos" ? "objetivos" : "asistencia");
+  const [categoryId, setCategoryId] = useState(params.get("categoria") ?? "");
+  const [date, setDate] = useState(today);
+
+  useEffect(() => {
+    if (data && (!categoryId || !data.categories.some((c) => c.id === categoryId))) setCategoryId(data.categories[0]?.id ?? "");
+  }, [data, categoryId]);
+
+  // Mantener la URL al día sin navegar (así funciona sin señal).
+  useEffect(() => {
+    const u = new URL(window.location.href);
+    u.searchParams.set("tab", tab);
+    if (categoryId) u.searchParams.set("categoria", categoryId);
+    window.history.replaceState(null, "", u);
+  }, [tab, categoryId]);
+
+  if (!data) {
+    return (
+      <p className="card text-sm text-orc-muted">
+        {loading ? "Cargando…" : "Abrí esta página una vez con señal para poder usarla sin conexión."}
+      </p>
+    );
+  }
+  if (!CAN_USE.includes(data.profile.role)) return <p className="card">La asistencia y los objetivos los cargan los entrenadores.</p>;
+
+  return (
+    <div className="space-y-4">
+      <header className="space-y-3">
+        <div>
+          <h1 className="text-2xl font-black">Práctica</h1>
+          <p className="text-sm text-orc-muted">
+            Al empezar, la asistencia. Al terminar, los objetivos.
+            {!online && " Sin señal: se guarda en el celular y se sube sola."}
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="label">Categoría</span>
+            <select className="field-input" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+              {data.categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="label">Fecha</span>
+            <input type="date" className="field-input" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} />
+          </label>
+        </div>
+        <div className="grid grid-cols-2 gap-1 rounded-xl bg-orc-chip p-1" role="tablist">
+          {(["asistencia", "objetivos"] as Tab[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="tab"
+              aria-selected={tab === t}
+              onClick={() => setTab(t)}
+              className={`rounded-lg py-2 text-sm font-bold ${tab === t ? "bg-orc-surface shadow-sm" : "text-orc-muted"}`}
+            >
+              {t === "asistencia" ? "Asistencia" : "Objetivos"}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      {categoryId &&
+        (tab === "asistencia" ? (
+          <AttendanceTab data={data} categoryId={categoryId} date={date} />
+        ) : (
+          <ObjectivesChecklist data={data} categoryId={categoryId} date={date} />
+        ))}
+    </div>
+  );
+}

@@ -1,14 +1,7 @@
-import type { Metadata } from "next";
-import { Suspense } from "react";
-import { ObjectivesScreen } from "@/components/objectives-screen";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Objetivos" };
-
-// Página 100% cliente: funciona sin señal.
-export default function ObjectivesPage() {
-  return (
-    <Suspense>
-      <ObjectivesScreen />
-    </Suspense>
-  );
+// Los objetivos ahora están en Práctica (pestaña Objetivos).
+export default async function ObjectivesPage({ searchParams }: { searchParams: Promise<{ categoria?: string }> }) {
+  const { categoria } = await searchParams;
+  redirect(`/practica?tab=objetivos${categoria ? `&categoria=${categoria}` : ""}`);
 }

@@ -17,8 +17,8 @@ Reglas:
 - Usá SOLO los datos del JSON. No inventes números, causas, diagnósticos ni recomendaciones médicas.
 - Nombrá a los jugadores únicamente con su código tal cual (J1, J2…). Nunca inventes nombres.
 - Español rioplatense, claro y directo, tono de colega. Máximo 8 líneas, sin títulos ni markdown, salvo guiones para la lista de "a tener en cuenta".
-- Primero cómo estuvo la semana (bienestar, carga, evaluaciones), después lo positivo (mejoras) y al final lo que hay que mirar (alertas y lesiones).
-- El bienestar es un puntaje de 5 a 25 (más es mejor). La carga es RPE × minutos por sesión.
+- Primero cómo estuvo la semana (asistencia, bienestar, carga, evaluaciones), después lo positivo (mejoras) y al final lo que hay que mirar (alertas y lesiones).
+- El bienestar es un puntaje de 5 a 25 (más es mejor). La carga es RPE × minutos por sesión. La asistencia % es presentes sobre presentes + ausentes (los justificados no cuentan).
 - Si no hay datos de algo, decilo en pocas palabras.`;
 
 export async function aiWeeklySummary(facts: WeeklyFacts): Promise<{ text: string; model: string } | null> {

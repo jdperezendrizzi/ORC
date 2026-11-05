@@ -36,7 +36,7 @@ export function AlertsList({
         Alertas {alerts.length > 0 && `(${alerts.length})`}
       </h2>
       {alerts.length === 0 ? (
-        <p className="card text-sm">Sin alertas: nadie con bienestar bajo, carga en alza, caída de rendimiento ni regreso vencido.</p>
+        <p className="card text-sm">Sin alertas: nadie con faltas seguidas, bienestar bajo, carga en alza, caída de rendimiento ni regreso vencido.</p>
       ) : (
         <div className="card space-y-2 p-0">
           <ul className="divide-y divide-orc-line">{alerts.slice(0, visible).map(item)}</ul>
@@ -51,6 +51,7 @@ export function AlertsList({
             <ul className="mt-2 list-disc space-y-1 pl-5 text-orc-muted">
               <li><b>Regreso vencido:</b> lesión sin alta con la fecha estimada de regreso ya pasada.</li>
               <li><b>Carga en alza:</b> la carga (RPE × minutos) de los últimos 7 días es 1,5 veces o más su promedio de las últimas 4 semanas. Los saltos bruscos de carga se asocian a más lesiones. Necesita 3 semanas de registros.</li>
+              <li><b>Faltas seguidas:</b> faltó a las últimas 3 prácticas sin justificar (en las últimas 2 semanas).</li>
               <li><b>Bienestar bajo:</b> los últimos 3 registros de bienestar en 12/25 o menos.</li>
               <li><b>Bajó el rendimiento:</b> en un test físico, la última medición (de los últimos 45 días) es peor que la anterior: 3 % en tiempos (sprint, agilidad) y 5 % en el resto.</li>
             </ul>

@@ -3,6 +3,7 @@
 
 import type { DashMetric, DashPoint } from "./dashboard";
 import { formatValue } from "./validation";
+import { ABSENCE_STREAK, absenceStreak, attendancePct, type AttendanceRow } from "./attendance";
 
 // ---------------------------------------------------------------------
 // Reglas (umbrales a la vista para poder explicarlos y ajustarlos)
@@ -43,7 +44,7 @@ export const TRACKED_METRICS = new Set([
 // Tipos
 // ---------------------------------------------------------------------
 
-export type AlertKind = "injury_overdue" | "load_spike" | "wellness_low" | "perf_drop";
+export type AlertKind = "injury_overdue" | "load_spike" | "wellness_low" | "absences" | "perf_drop";
 export type Severity = "alta" | "media";
 
 export interface Alert {
@@ -85,12 +86,15 @@ export interface AlertInput {
   points: DashPoint[];
   wellness: WellnessPoint[];
   injuries: InjuryPoint[];
+  /** Asistencia reciente (opcional: sin ella no hay alerta de faltas). */
+  attendance?: AttendanceRow[];
 }
 
 export const alertKindLabel: Record<AlertKind, string> = {
   injury_overdue: "Regreso vencido",
   load_spike: "Carga en alza",
   wellness_low: "Bienestar bajo",
+  absences: "Faltas seguidas",
   perf_drop: "Bajó el rendimiento",
 };
 
@@ -165,7 +169,7 @@ function groupBy<T>(rows: T[], key: (r: T) => string): Map<string, T[]> {
 }
 
 const SEVERITY_ORDER: Record<Severity, number> = { alta: 0, media: 1 };
-const KIND_ORDER: Record<AlertKind, number> = { injury_overdue: 0, load_spike: 1, wellness_low: 2, perf_drop: 3 };
+const KIND_ORDER: Record<AlertKind, number> = { injury_overdue: 0, load_spike: 1, wellness_low: 2, absences: 3, perf_drop: 4 };
 
 export function computeAlerts(input: AlertInput): Alert[] {
   const { today } = input;
@@ -222,7 +226,25 @@ export function computeAlerts(input: AlertInput): Alert[] {
     }
   }
 
-  // 4. Caída de rendimiento en tests físicos
+  // 4. Faltas seguidas sin justificar a prácticas (de la categoría actual)
+  const attByPlayer = groupBy(
+    (input.attendance ?? []).filter((a) => players.get(a.player_id)?.categoryId === a.category_id && a.att_date <= today),
+    (a) => a.player_id,
+  );
+  for (const [playerId, rows] of attByPlayer) {
+    const st = absenceStreak(rows);
+    if (st.count >= ABSENCE_STREAK && daysBetween(st.dates[0], today) <= 14) {
+      push({
+        kind: "absences",
+        severity: "media",
+        playerId,
+        detail: `Faltó a las últimas ${st.count} prácticas sin justificar (${st.dates.slice(0, 3).reverse().map(shortDate).join(", ")}). Averiguar qué pasa.`,
+        href: `/jugadores/${playerId}`,
+      });
+    }
+  }
+
+  // 5. Caída de rendimiento en tests físicos
   const tracked = input.metrics.filter((m) => TRACKED_METRICS.has(m.code));
   const metricById = new Map(tracked.map((m) => [m.id, m]));
   const series = groupBy(
@@ -271,6 +293,7 @@ export interface WeeklyFacts {
     carga_promedio: number | null; // sRPE por registro
     carga_promedio_semana_anterior: number | null;
   };
+  asistencia: { practicas: number; partidos: number; promedio_pct: number | null; semana_anterior_pct: number | null };
   evaluaciones: { fecha: string; titulo: string }[];
   mejoras: { jugador: string; detalle: string }[];
   lesiones: { activas: number; nuevas: number; altas: number; regreso_vencido: number };
@@ -340,6 +363,18 @@ export function weeklyFacts(input: WeeklyInput, sessionLabel: (type: string) => 
       carga_promedio: avg(loads(wk)),
       carga_promedio_semana_anterior: avg(loads(prev)),
     },
+    asistencia: (() => {
+      const att = (input.attendance ?? []).filter((a) => ids.has(a.player_id));
+      const wkA = att.filter((a) => inRange(a.att_date, from, today));
+      const prevA = att.filter((a) => inRange(a.att_date, prevFrom, prevTo));
+      const days = (rows: AttendanceRow[], k: string) => new Set(rows.filter((r) => r.kind === k).map((r) => `${r.category_id}|${r.att_date}`)).size;
+      return {
+        practicas: days(wkA, "practice"),
+        partidos: days(wkA, "match"),
+        promedio_pct: attendancePct(wkA),
+        semana_anterior_pct: attendancePct(prevA),
+      };
+    })(),
     evaluaciones: input.sessions
       .filter((s) => inRange(s.session_date, from, today))
       .sort((a, b) => a.session_date.localeCompare(b.session_date))
@@ -393,6 +428,14 @@ export function templateSummary(f: WeeklyFacts): string {
     }
   } else {
     lines.push("Bienestar: no hubo registros esta semana.");
+  }
+  const a = f.asistencia;
+  if (a && a.practicas + a.partidos > 0) {
+    lines.push(
+      `Asistencia: ${a.promedio_pct ?? "—"} % en ${a.practicas} ${a.practicas === 1 ? "práctica" : "prácticas"}${a.partidos ? ` y ${a.partidos} ${a.partidos === 1 ? "partido" : "partidos"}` : ""}${a.semana_anterior_pct !== null ? ` (semana anterior: ${a.semana_anterior_pct} %)` : ""}.`,
+    );
+  } else if (a) {
+    lines.push("Asistencia: no se tomó esta semana.");
   }
   if (f.evaluaciones.length) lines.push(`Evaluaciones: ${f.evaluaciones.map((e) => `${e.titulo} (${shortDate(e.fecha)})`).join(", ")}.`);
   if (f.mejoras.length) lines.push(`Mejoras: ${f.mejoras.map((m) => `${m.jugador} en ${m.detalle}`).join("; ")}.`);

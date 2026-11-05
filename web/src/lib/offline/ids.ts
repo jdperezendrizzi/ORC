@@ -26,5 +26,9 @@ export const wellnessId = (playerId: string, date: string) => deterministicId("w
 export const objectiveCheckId = (objectiveId: string, date: string, playerId: string | null) =>
   deterministicId("objective", objectiveId, date, playerId ?? "equipo");
 
+/** Asistencia de un jugador en un día (corregir pisa la misma fila). */
+export const attendanceId = (playerId: string, categoryId: string, date: string) =>
+  deterministicId("attendance", playerId, categoryId, date);
+
 /** UUID aleatorio para entidades nuevas (sesiones creadas en la cancha). */
 export const randomId = () => crypto.randomUUID();

@@ -119,10 +119,20 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
 * **Admin → Objetivos**: por categoría, cada objetivo con área (juego, contacto/tackle, actitud), *qué mirar* y un
   ejercicio sugerido (explicación y link opcional a video). Se pueden editar, ordenar, desactivar y copiar de otra
   categoría. Hay un **borrador para M6 y M7** para corregir.
-* **Objetivos** (menú del profe y del admin): el checklist de la categoría. Después de la práctica el profe tacha lo
+* **Práctica → Objetivos** (menú del profe y del admin): el checklist de la categoría. Después de la práctica el profe tacha lo
   que el equipo cumplió (y puede dejar una nota). **Funciona sin señal.** Un objetivo tachado queda logrado hasta que
   se destacha en otra práctica; cada marca queda con fecha, así se ve la evolución en la temporada.
 * Permisos (RLS): el admin carga los objetivos; el profe los ve y tacha sólo en sus categorías; el área médica no
   los usa. Los objetivos del equipo no son datos personales (no piden consentimiento). Los objetivos **por jugador**
   (`scope = 'player'`, para más adelante) exigen el consentimiento de datos de rendimiento.
 * Categorías agregadas: M6 a M11 y M13.
+
+### Asistencia (todas las categorías)
+
+* **Práctica → Asistencia** (profe y admin; funciona sin señal): categoría, fecha y si es práctica o partido;
+  "Todos presentes" y después se marcan los ausentes y justificados. Corregir el mismo día pisa la misma fila.
+* **Asistencia %** = presentes / (presentes + ausentes); los justificados no cuentan. Se ve en el perfil del jugador
+  (con las últimas faltas), en la página de la categoría (columna *Asist.*, en rojo debajo de 60 %) y en el resumen
+  semanal. Alerta nueva: **faltó a las últimas 3 prácticas sin justificar**.
+* Permisos (RLS): el profe la toma y corrige en sus categorías; el admin todo; el área médica sólo la ve. El jugador
+  tiene que estar en esa categoría en la temporada. Es un registro básico del club: no pide consentimiento.

@@ -58,7 +58,7 @@ export function navItems(canLoad: boolean, isAdmin = false): NavItem[] {
     { href: "/", label: "Inicio", icon: <Icon>{icons.home}</Icon> },
     ...(canLoad ? [{ href: "/cargar", label: "Cargar", icon: <Icon>{icons.load}</Icon> }] : []),
     { href: "/bienestar", label: "Bienestar", icon: <Icon>{icons.wellness}</Icon> },
-    ...(canLoad ? [{ href: "/objetivos", label: "Objetivos", icon: <Icon>{icons.objectives}</Icon> }] : []),
+    ...(canLoad ? [{ href: "/practica", label: "Práctica", icon: <Icon>{icons.objectives}</Icon> }] : []),
     { href: "/lesiones", label: "Lesiones", icon: <Icon>{icons.injuries}</Icon> },
     ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: <Icon>{icons.admin}</Icon> }] : []),
   ];

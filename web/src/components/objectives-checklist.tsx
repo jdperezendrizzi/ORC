@@ -1,41 +1,34 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { loadCachedObjectives, refreshObjectives, saveLocalObjectiveCheck, type ObjectivesData } from "@/lib/offline/field-data";
+import { loadCachedObjectives, refreshObjectives, saveLocalObjectiveCheck, type FieldData, type ObjectivesData } from "@/lib/offline/field-data";
 import { enqueue } from "@/lib/offline/outbox";
 import { objectiveCheckId } from "@/lib/offline/ids";
 import { AREA_ORDER, mergeChecks, objectiveAreaLabel, objectiveState, progress } from "@/lib/objectives";
 import { formatDate } from "@/lib/labels";
 import { clubToday } from "@/lib/validation";
 import type { Objective, ObjectiveCheck } from "@/lib/types";
-import { useFieldData } from "./use-field-data";
 import { useSync } from "./sync-provider";
 
-const CAN_CHECK = ["admin", "coach"];
 const d = (iso: string) => formatDate(iso, { day: "numeric", month: "short" });
 
-/** Checklist de objetivos de la categoría. Funciona sin señal. */
-export function ObjectivesScreen() {
-  const { data, loading } = useFieldData();
-  const { items, online, lastSyncAt } = useSync();
-  const params = useSearchParams();
+/** Checklist de objetivos de la categoría en una práctica. Funciona sin señal. */
+export function ObjectivesChecklist({ data, categoryId, date }: { data: FieldData; categoryId: string; date: string }) {
+  const { items, lastSyncAt } = useSync();
   const [obj, setObj] = useState<ObjectivesData | null>(null);
-  const [categoryId, setCategoryId] = useState(params.get("categoria") ?? "");
   const today = clubToday();
-  const [date, setDate] = useState(today);
 
-  const categoryIds = useMemo(() => (data?.categories ?? []).map((c) => c.id).join(","), [data]);
+  const categoryIds = useMemo(() => data.categories.map((c) => c.id).join(","), [data]);
 
   const refresh = useCallback(async () => {
-    if (!data || !navigator.onLine) return;
+    if (!navigator.onLine) return;
     try {
       setObj(await refreshObjectives(supabaseBrowser(), data.season.id, categoryIds.split(",").filter(Boolean)));
     } catch {
       /* sin señal: queda lo guardado */
     }
-  }, [data, categoryIds]);
+  }, [data.season.id, categoryIds]);
 
   useEffect(() => {
     void loadCachedObjectives().then((c) => c && setObj((prev) => prev ?? c));
@@ -44,13 +37,6 @@ export function ObjectivesScreen() {
   useEffect(() => {
     void refresh();
   }, [refresh, lastSyncAt]);
-
-  // Categoría por defecto: la primera que tenga objetivos.
-  useEffect(() => {
-    if (!data || !obj || categoryId) return;
-    const withObj = data.categories.find((c) => obj.objectives.some((o) => o.category_id === c.id));
-    setCategoryId(withObj?.id ?? data.categories[0]?.id ?? "");
-  }, [data, obj, categoryId]);
 
   const pendingRows = useMemo(
     () => items.filter((i) => i.table === "objective_checks").map((i) => ({ row: i.row as unknown as ObjectiveCheck, item: i })),
@@ -62,18 +48,9 @@ export function ObjectivesScreen() {
     [obj, categoryId],
   );
 
-  if (!data) {
-    return (
-      <p className="card text-sm text-orc-muted">
-        {loading ? "Cargando…" : "Abrí esta página una vez con señal para poder usar el checklist sin conexión."}
-      </p>
-    );
-  }
-  if (!CAN_CHECK.includes(data.profile.role)) return <p className="card">El checklist de objetivos lo usan los entrenadores.</p>;
-
   const canCheck = date <= today;
   async function mark(o: Objective, achieved: boolean, note?: string | null) {
-    if (!data || !canCheck) return;
+    if (!canCheck) return;
     const id = await objectiveCheckId(o.id, date, null);
     const prevNote = checks.find((c) => c.id === id)?.note ?? null;
     const row: ObjectiveCheck = {
@@ -92,82 +69,56 @@ export function ObjectivesScreen() {
   const p = progress(objectives, checks, date);
   const category = data.categories.find((c) => c.id === categoryId);
 
+  if (objectives.length === 0) {
+    return (
+      <p className="card text-sm">
+        {obj ? `Todavía no hay objetivos cargados para ${category?.name ?? "esta categoría"}. Los carga el admin en Admin → Objetivos.` : "Cargando objetivos…"}
+      </p>
+    );
+  }
   return (
     <div className="space-y-4">
-      <header className="space-y-3">
-        <div>
-          <h1 className="text-2xl font-black">Objetivos</h1>
-          <p className="text-sm text-orc-muted">
-            Después de la práctica, tachá lo que el equipo cumplió. Tocá un objetivo para ver qué mirar y el ejercicio.
-            {!online && " Sin señal: se guarda en el celular y se sube sola."}
-          </p>
+      <p className="text-sm text-orc-muted">Después de la práctica, tachá lo que el equipo cumplió. Tocá un objetivo para ver qué mirar y el ejercicio.</p>
+      <section className="card space-y-2" aria-label="Avance">
+        <div className="flex items-baseline justify-between">
+          <span className="font-bold">{category?.name}</span>
+          <span className="text-sm">
+            <b className="text-lg tabular-nums">{p.done}</b> de {p.total} logrados
+          </span>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="label">Categoría</span>
-            <select className="field-input" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-              {data.categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="label">Práctica del</span>
-            <input type="date" className="field-input" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} />
-          </label>
+        <div className="h-2.5 overflow-hidden rounded-full bg-orc-chip" role="progressbar" aria-valuemin={0} aria-valuemax={p.total} aria-valuenow={p.done}>
+          <div className="h-full rounded-full bg-orc-orange transition-all" style={{ width: `${p.total ? (p.done / p.total) * 100 : 0}%` }} />
         </div>
-      </header>
+      </section>
 
-      {objectives.length === 0 ? (
-        <p className="card text-sm">
-          {obj ? `Todavía no hay objetivos cargados para ${category?.name ?? "esta categoría"}. Los carga el admin en Admin → Objetivos.` : "Cargando objetivos…"}
-        </p>
-      ) : (
-        <>
-          <section className="card space-y-2" aria-label="Avance">
-            <div className="flex items-baseline justify-between">
-              <span className="font-bold">{category?.name}</span>
-              <span className="text-sm">
-                <b className="text-lg tabular-nums">{p.done}</b> de {p.total} logrados
-              </span>
-            </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-orc-chip" role="progressbar" aria-valuemin={0} aria-valuemax={p.total} aria-valuenow={p.done}>
-              <div className="h-full rounded-full bg-orc-orange transition-all" style={{ width: `${p.total ? (p.done / p.total) * 100 : 0}%` }} />
-            </div>
+      {AREA_ORDER.map((area) => {
+        const list = objectives.filter((o) => o.area === area);
+        if (list.length === 0) return null;
+        return (
+          <section key={area} className="space-y-2">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-orc-muted">{objectiveAreaLabel[area]}</h2>
+            <ul className="space-y-2">
+              {list.map((o) => {
+                const st = objectiveState(checks, o.id, date);
+                const pend = pendingRows.find((r) => r.row.objective_id === o.id && r.row.check_date === date)?.item;
+                return (
+                  <ObjectiveItem
+                    key={o.id}
+                    objective={o}
+                    achieved={st.achieved}
+                    status={statusText(st)}
+                    note={st.today?.note ?? ""}
+                    sync={pend ? (pend.status === "error" ? `No se pudo subir: ${pend.error}` : "Sin subir") : null}
+                    disabled={!canCheck}
+                    onToggle={() => void mark(o, !st.achieved)}
+                    onNote={(note) => void mark(o, st.achieved, note || null)}
+                  />
+                );
+              })}
+            </ul>
           </section>
-
-          {AREA_ORDER.map((area) => {
-            const list = objectives.filter((o) => o.area === area);
-            if (list.length === 0) return null;
-            return (
-              <section key={area} className="space-y-2">
-                <h2 className="text-sm font-bold uppercase tracking-wide text-orc-muted">{objectiveAreaLabel[area]}</h2>
-                <ul className="space-y-2">
-                  {list.map((o) => {
-                    const st = objectiveState(checks, o.id, date);
-                    const pend = pendingRows.find((r) => r.row.objective_id === o.id && r.row.check_date === date)?.item;
-                    return (
-                      <ObjectiveItem
-                        key={o.id}
-                        objective={o}
-                        achieved={st.achieved}
-                        status={statusText(st)}
-                        note={st.today?.note ?? ""}
-                        sync={pend ? (pend.status === "error" ? `No se pudo subir: ${pend.error}` : "Sin subir") : null}
-                        disabled={!canCheck}
-                        onToggle={() => void mark(o, !st.achieved)}
-                        onNote={(note) => void mark(o, st.achieved, note || null)}
-                      />
-                    );
-                  })}
-                </ul>
-              </section>
-            );
-          })}
-        </>
-      )}
+        );
+      })}
     </div>
   );
 }

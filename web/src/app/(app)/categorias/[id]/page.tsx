@@ -4,6 +4,8 @@ import { AlertsList } from "@/components/alerts-list";
 import { WeeklySummaryCard, type WeeklySummaryView } from "@/components/weekly-summary";
 import { computeAlerts, withNames } from "@/lib/alerts";
 import { loadAlertInput } from "@/lib/alerts-server";
+import { ratesByPlayer, type AttendanceRow } from "@/lib/attendance";
+import { fetchAll } from "@/lib/fetch-all";
 import { aiConfigured } from "@/lib/ai";
 import { generateWeeklySummary } from "./summary-actions";
 import { ExportCategoryButton } from "@/components/share-report";
@@ -75,6 +77,19 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
   const best = new Map((bests ?? []).map((b) => [`${b.player_id}:${b.metric_code}`, Number(b.value)]));
   const injury = new Map((injuriesRes.data ?? []).map((i) => [i.player_id as string, i.status as string]));
   const consents = consentsRes.data ?? [];
+
+  // Asistencia de la temporada por jugador
+  const attendance = await fetchAll<AttendanceRow>(
+    () =>
+      supabase
+        .from("attendance")
+        .select("id, player_id, category_id, season_id, att_date, kind, status, note")
+        .eq("category_id", id)
+        .eq("season_id", season.id)
+        .order("id") as never,
+  );
+  const attRate = ratesByPlayer(attendance);
+  const practiceDays = new Set(attendance.map((a) => a.att_date)).size;
 
   // Alertas y resumen semanal (sólo cuerpo técnico)
   const staff = isStaff(profile);
@@ -154,6 +169,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
                   {m.label}
                 </th>
               ))}
+              <th className="px-3 py-2 text-right" title="Asistencia de la temporada">Asist.</th>
               <th className="px-3 py-2">Estado</th>
             </tr>
           </thead>
@@ -176,6 +192,13 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
                       {formatValue(best.get(`${pid}:${m.code}`), m.decimals)}
                     </td>
                   ))}
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {(() => {
+                      const r = attRate.get(pid);
+                      if (!r || r.pct === null) return "—";
+                      return <span className={r.pct < 60 ? "font-bold text-red-700 dark:text-red-400" : ""}>{r.pct}%</span>;
+                    })()}
+                  </td>
                   <td className="space-x-1 px-3 py-2 whitespace-nowrap">
                     {status && <span className={`chip ${injuryStatusTone[status]}`}>{injuryStatusLabel[status]}</span>}
                     {!has(pid, "performance_data") && (
@@ -192,7 +215,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
         <p className="border-t border-orc-line px-3 py-2 text-xs text-orc-muted">
           Mejor marca de cada jugador en la temporada. <b>10 m</b>: sprint en segundos (menos es mejor) ·{" "}
           <b>CMJ</b>: salto en cm (potencia) · <b>Yo-Yo</b>: metros en el test de resistencia ·{" "}
-          <b>Sentadilla</b>: 1RM en kg (fuerza de piernas). Tocá un jugador para ver su evolución.{" "}
+          <b>Sentadilla</b>: 1RM en kg (fuerza de piernas) · <b>Asist.</b>: asistencia de la temporada
+          ({practiceDays} {practiceDays === 1 ? "día" : "días"} con asistencia tomada; en rojo, menos de 60 %). Tocá un jugador para ver su evolución.{" "}
           <a href="/guia" className="font-semibold text-orc-orange-strong">
             Qué significa cada dato →
           </a>
