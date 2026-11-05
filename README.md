@@ -152,6 +152,8 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
 
 ### Permisos por módulo
 
+* **Admin → Usuarios**: buscador (nombre o email) y filtros por rol, estado, categoría y «con permisos restringidos»;
+  vista *Lista* o *Permisos* (grilla usuarios × módulos). Los filtros quedan en la URL y se recuerdan al volver.
 * **Admin → Usuarios → (usuario) → Permisos por módulo**: para cada módulo (Rendimiento, Bienestar, Asistencia,
   Objetivos, Lesiones, Pase de categoría, Resumen y alertas, Compartir) un nivel: **No ve · Ve · Carga**.
 * **El rol define el máximo** (profe: todo en Carga; área médica: Rendimiento, Asistencia y Pase en Ve, Objetivos no,

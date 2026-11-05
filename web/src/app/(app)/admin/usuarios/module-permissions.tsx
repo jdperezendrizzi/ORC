@@ -14,16 +14,18 @@ export function ModulePermissions({
   effective,
   restricted,
   others,
+  initiallyOpen = false,
 }: {
   profileId: string;
   role: AppRole;
   effective: Modules;
   restricted: number;
   others: { id: string; name: string }[];
+  initiallyOpen?: boolean;
 }) {
   if (role === "admin") return <p className="text-xs text-orc-muted">El admin tiene todos los módulos.</p>;
   return (
-    <Collapsible summary={`Permisos por módulo${restricted ? ` (${restricted} restringidos)` : " (los de su rol)"}`} className="text-sm">
+    <Collapsible summary={`Permisos por módulo${restricted ? ` (${restricted} restringidos)` : " (los de su rol)"}`} className="text-sm" initiallyOpen={initiallyOpen}>
       <div className="mt-3 space-y-3">
         <p className="text-xs text-orc-muted">
           El rol define el máximo; acá se puede restringir. Se combina con las categorías: lo que tenga habilitado lo ve o lo

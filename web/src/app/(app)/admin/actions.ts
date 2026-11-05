@@ -270,7 +270,7 @@ export async function updateUser(_: ActionResult, f: FormData): Promise<ActionRe
     const r = await assignCategories(supabase, season.id, id, role === "coach" ? f.getAll("category_ids").map(String) : []);
     if (r) return r;
   }
-  revalidatePath("/admin/usuarios");
+  revalidatePath("/admin/usuarios", "layout");
   return { ok: "Usuario actualizado." };
 }
 
@@ -303,7 +303,7 @@ export async function inviteUser(_: ActionResult, f: FormData): Promise<ActionRe
     const r = await assignCategories(supabase, season.id, id, f.getAll("category_ids").map(String));
     if (r) return r;
   }
-  revalidatePath("/admin/usuarios");
+  revalidatePath("/admin/usuarios", "layout");
   return { ok: `Invitación enviada a ${email}. Va a recibir un link para crear su contraseña.` };
 }
 

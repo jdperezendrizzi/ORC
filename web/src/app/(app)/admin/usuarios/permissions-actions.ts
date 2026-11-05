@@ -17,7 +17,7 @@ async function replace(profileId: string, rows: { module: string; level: ModuleL
     const ins = await supabase.from("user_module_permissions").insert(rows.map((r) => ({ ...r, profile_id: profileId })));
     if (ins.error) return { error: ins.error.message };
   }
-  revalidatePath("/admin/usuarios");
+  revalidatePath("/admin/usuarios", "layout");
   return null;
 }
 
