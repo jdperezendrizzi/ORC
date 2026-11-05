@@ -22,5 +22,9 @@ export const resultId = (sessionId: string, playerId: string, metricId: string, 
 
 export const wellnessId = (playerId: string, date: string) => deterministicId("wellness", playerId, date);
 
+/** Marca de un objetivo en una práctica: tachar/destachar el mismo día pisa la misma fila. */
+export const objectiveCheckId = (objectiveId: string, date: string, playerId: string | null) =>
+  deterministicId("objective", objectiveId, date, playerId ?? "equipo");
+
 /** UUID aleatorio para entidades nuevas (sesiones creadas en la cancha). */
 export const randomId = () => crypto.randomUUID();

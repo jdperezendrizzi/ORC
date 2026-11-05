@@ -33,6 +33,13 @@ const icons = {
       <path d="M12 8v8M8 12h8" />
     </>
   ),
+  objectives: (
+    <>
+      <path d="M9 6h11M9 12h11M9 18h11" />
+      <path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11" />
+      <circle cx="5" cy="18" r="1.2" />
+    </>
+  ),
   wellness: (
     <path d="M12 20s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 10c0 5.65-7 10-7 10z" />
   ),
@@ -51,6 +58,7 @@ export function navItems(canLoad: boolean, isAdmin = false): NavItem[] {
     { href: "/", label: "Inicio", icon: <Icon>{icons.home}</Icon> },
     ...(canLoad ? [{ href: "/cargar", label: "Cargar", icon: <Icon>{icons.load}</Icon> }] : []),
     { href: "/bienestar", label: "Bienestar", icon: <Icon>{icons.wellness}</Icon> },
+    ...(canLoad ? [{ href: "/objetivos", label: "Objetivos", icon: <Icon>{icons.objectives}</Icon> }] : []),
     { href: "/lesiones", label: "Lesiones", icon: <Icon>{icons.injuries}</Icon> },
     ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: <Icon>{icons.admin}</Icon> }] : []),
   ];

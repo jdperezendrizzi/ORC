@@ -180,3 +180,28 @@ export interface AcwrRow {
   acwr: number | null;
   chronic_window_complete: boolean;
 }
+
+export type ObjectiveArea = "game" | "contact" | "attitude" | "other";
+
+export interface Objective {
+  id: string;
+  category_id: string;
+  scope: "team" | "player";
+  area: ObjectiveArea;
+  title: string;
+  look_for: string | null;
+  exercise_name: string | null;
+  exercise_description: string | null;
+  exercise_url: string | null;
+  sort_order: number;
+}
+
+export interface ObjectiveCheck {
+  id: string;
+  objective_id: string;
+  season_id: string;
+  check_date: string;
+  player_id: string | null;
+  achieved: boolean;
+  note: string | null;
+}

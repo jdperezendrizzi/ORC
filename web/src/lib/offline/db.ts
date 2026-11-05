@@ -4,7 +4,7 @@
 
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 
-export type OutboxTable = "evaluation_sessions" | "results" | "wellness_logs" | "injuries";
+export type OutboxTable = "evaluation_sessions" | "results" | "wellness_logs" | "injuries" | "objective_checks";
 
 export interface OutboxItem {
   /** `${table}:${row.id}` — una edición posterior del mismo registro reemplaza la pendiente. */

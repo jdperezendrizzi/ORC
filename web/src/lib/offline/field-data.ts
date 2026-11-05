@@ -5,6 +5,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   WellnessLog,
   Category,
+  Objective,
+  ObjectiveCheck,
   Consent,
   EvaluationSession,
   Position,
@@ -16,6 +18,7 @@ import type {
   TestType,
 } from "../types";
 import { cacheGet, cachePut } from "./db";
+import { fetchAll } from "../fetch-all";
 
 export interface FieldData {
   profile: Profile;
@@ -216,4 +219,48 @@ const num = (v: unknown): number | null => (v === null || v === undefined ? null
 /** Asegura tipos numéricos (numeric de Postgres puede llegar como string según el cliente). */
 function normalizeMetric(m: TestMetric): TestMetric {
   return { ...m, min_valid: num(m.min_valid), max_valid: num(m.max_valid), decimals: Number(m.decimals) };
+}
+
+// ---------------------------------------------------------------------
+// Objetivos (checklist): catálogo de las categorías del usuario y marcas
+// de la temporada, guardados en el celular para tachar sin señal.
+// ---------------------------------------------------------------------
+export interface ObjectivesData {
+  objectives: Objective[];
+  checks: ObjectiveCheck[];
+}
+const OBJECTIVES_KEY = "objectives";
+
+export async function loadCachedObjectives(): Promise<ObjectivesData | null> {
+  return (await cacheGet<ObjectivesData>(OBJECTIVES_KEY))?.data ?? null;
+}
+
+export async function refreshObjectives(supabase: SupabaseClient, seasonId: string, categoryIds: string[]): Promise<ObjectivesData> {
+  if (categoryIds.length === 0) return { objectives: [], checks: [] };
+  const [objectives, checks] = await Promise.all([
+    supabase
+      .from("objectives")
+      .select("id, category_id, scope, area, title, look_for, exercise_name, exercise_description, exercise_url, sort_order")
+      .eq("active", true)
+      .in("category_id", categoryIds)
+      .order("sort_order"),
+    fetchAll<ObjectiveCheck>(
+      () =>
+        supabase
+          .from("objective_checks")
+          .select("id, objective_id, season_id, check_date, player_id, achieved, note")
+          .eq("season_id", seasonId)
+          .order("id") as never,
+    ),
+  ]);
+  const data = { objectives: must(objectives, "objetivos") as Objective[], checks };
+  await cachePut(OBJECTIVES_KEY, data);
+  return data;
+}
+
+/** Guarda en el celular una marca recién hecha (para verla al recargar sin señal). */
+export async function saveLocalObjectiveCheck(check: ObjectiveCheck): Promise<void> {
+  const cached = await loadCachedObjectives();
+  if (!cached) return;
+  await cachePut(OBJECTIVES_KEY, { ...cached, checks: [...cached.checks.filter((c) => c.id !== check.id), check] });
 }

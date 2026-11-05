@@ -113,3 +113,16 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
   `GROQ_API_KEY` (sin `NEXT_PUBLIC_`), y redeploy. Opcional: `GROQ_MODEL` (por defecto `llama-3.3-70b-versatile`).
   Sin clave, o si la IA falla, el resumen se arma con una plantilla con los mismos datos. Para cuidar el cupo gratis
   no se regenera más de una vez cada 5 minutos por categoría.
+
+### Objetivos por categoría (checklist)
+
+* **Admin → Objetivos**: por categoría, cada objetivo con área (juego, contacto/tackle, actitud), *qué mirar* y un
+  ejercicio sugerido (explicación y link opcional a video). Se pueden editar, ordenar, desactivar y copiar de otra
+  categoría. Hay un **borrador para M6 y M7** para corregir.
+* **Objetivos** (menú del profe y del admin): el checklist de la categoría. Después de la práctica el profe tacha lo
+  que el equipo cumplió (y puede dejar una nota). **Funciona sin señal.** Un objetivo tachado queda logrado hasta que
+  se destacha en otra práctica; cada marca queda con fecha, así se ve la evolución en la temporada.
+* Permisos (RLS): el admin carga los objetivos; el profe los ve y tacha sólo en sus categorías; el área médica no
+  los usa. Los objetivos del equipo no son datos personales (no piden consentimiento). Los objetivos **por jugador**
+  (`scope = 'player'`, para más adelante) exigen el consentimiento de datos de rendimiento.
+* Categorías agregadas: M6 a M11 y M13.
