@@ -136,6 +136,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
           </p>
         </div>
         <div className="flex flex-wrap items-start justify-end gap-2">
+          {staff && (
+            <a href={`/categorias/${category.id}/pase`} className="btn-ghost">
+              Pase de categoría
+            </a>
+          )}
           <ExportCategoryButton categoryId={category.id} />
           <a href={`/cargar?categoria=${category.id}`} className="btn-primary">
             + Cargar

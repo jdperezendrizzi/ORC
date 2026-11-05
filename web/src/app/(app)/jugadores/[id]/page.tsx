@@ -212,8 +212,13 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
             </span>
           ))}
         </div>
-        <div className="border-t border-white/10 px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
           <ShareReportButton playerId={id} data={report} blockedReason={shareBlocked} />
+          {psc?.category && (
+            <a href={`/jugadores/${id}/pase`} className="btn-ghost h-10 border-white/30 text-white">
+              Ficha de pase →
+            </a>
+          )}
         </div>
       </header>
 

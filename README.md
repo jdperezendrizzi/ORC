@@ -136,3 +136,16 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
   semanal. Alerta nueva: **faltó a las últimas 3 prácticas sin justificar**.
 * Permisos (RLS): el profe la toma y corrige en sus categorías; el admin todo; el área médica sólo la ve. El jugador
   tiene que estar en esa categoría en la temporada. Es un registro básico del club: no pide consentimiento.
+
+### Ficha de pase de categoría
+
+* **Perfil del jugador → Ficha de pase** (cuerpo técnico): asistencia de la temporada, objetivos de la categoría,
+  disponibilidad (lesiones y días fuera, sin diagnóstico) y **físico vs. la categoría siguiente** (o la que se elija,
+  p. ej. Primera): su mejor marca de la temporada contra la mediana y el rango típico (25–75 %) de esa categoría, de su
+  misma unidad (forwards/backs), con la mejora de la temporada. Sólo datos agregados (n ≥ 3); sin consentimiento de
+  rendimiento no muestra datos físicos.
+* **Recomendación** (profe de la categoría) y **decisión** (admin/coordinador): Sube / En observación / Se queda, con
+  comentario, quién y cuándo. Tabla `promotion_reviews`; el trigger impide que el profe cargue la decisión.
+* **Categoría → Pase de categoría**: todo el plantel con asistencia, tests en la mediana o mejor, recomendación y
+  decisión, para la reunión de fin de año.
+* La decisión queda registrada; el cambio de categoría se aplica al armar la temporada siguiente.
