@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { hasConsent } from "@/lib/offline/field-data";
+import { fieldModules, hasConsent } from "@/lib/offline/field-data";
+import { canEdit } from "@/lib/modules";
 import { discardOutbox, enqueue } from "@/lib/offline/outbox";
 import { randomId } from "@/lib/offline/ids";
 import { validateInjury, type InjuryDraft } from "@/lib/injury";
@@ -62,7 +63,9 @@ export function InjuryForm() {
       </p>
     );
   }
-  if (!STAFF.includes(data.profile.role)) return <p className="card">No tenés permiso para registrar lesiones.</p>;
+  if (!STAFF.includes(data.profile.role) || !canEdit(fieldModules(data), "injuries")) {
+    return <p className="card">No tenés permiso para registrar lesiones.</p>;
+  }
 
   const set = <K extends keyof InjuryDraft>(k: K, v: InjuryDraft[K]) => setDraft((d) => ({ ...d, [k]: v }));
   const playerName = (id: string) => {

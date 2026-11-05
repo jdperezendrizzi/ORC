@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { hasConsent, loadCachedWellness, refreshWellness, saveCachedWellness } from "@/lib/offline/field-data";
+import { fieldModules, hasConsent, loadCachedWellness, refreshWellness, saveCachedWellness } from "@/lib/offline/field-data";
+import { canEdit, canView } from "@/lib/modules";
 import { enqueue } from "@/lib/offline/outbox";
 import { wellnessId } from "@/lib/offline/ids";
 import { localDate } from "@/lib/validation";
@@ -90,10 +91,15 @@ export function WellnessScreen() {
     );
   }
 
+  const mods = fieldModules(data);
+  if (!canView(mods, "wellness")) return <p className="card mt-6 text-center text-orc-muted">No tenés habilitado el módulo de bienestar.</p>;
+  const editable = canEdit(mods, "wellness");
+
   const done = players.filter((p) => pendingByPlayer.has(p.id) || server.some((w) => w.player_id === p.id)).length;
 
   return (
     <div className="space-y-4">
+      {!editable && <p className="rounded-lg tone-amber px-3 py-2 text-sm">Bienestar sólo para ver: no tenés habilitada la carga.</p>}
       <div className="card flex flex-wrap items-end gap-3 p-3">
         {data.categories.length > 1 && (
           <div className="min-w-40 flex-1">
@@ -153,10 +159,10 @@ export function WellnessScreen() {
                     {score(current) !== null ? `${score(current)}/25` : "✓"}
                   </span>
                 ) : (
-                  <span className="text-sm text-orc-muted">Cargar ›</span>
+                  <span className="text-sm text-orc-muted">{editable ? "Cargar ›" : "—"}</span>
                 )}
               </button>
-              {open === p.id && consentOk && (
+              {open === p.id && consentOk && editable && (
                 <WellnessForm
                   player={p}
                   date={date}

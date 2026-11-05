@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { clubToday } from "@/lib/validation";
+import { canEdit, canView } from "@/lib/modules";
+import { fieldModules } from "@/lib/offline/field-data";
 import { useFieldData } from "./use-field-data";
 import { useSync } from "./sync-provider";
 import { AttendanceTab } from "./attendance-tab";
@@ -41,6 +43,11 @@ export function PracticeScreen() {
     );
   }
   if (!CAN_USE.includes(data.profile.role)) return <p className="card">La asistencia y los objetivos los cargan los entrenadores.</p>;
+  const mods = fieldModules(data);
+  const tabs = (["asistencia", "objetivos"] as Tab[]).filter((t) => canView(mods, t === "asistencia" ? "attendance" : "objectives"));
+  if (tabs.length === 0) return <p className="card">No tenés habilitados la asistencia ni los objetivos.</p>;
+  const current = tabs.includes(tab) ? tab : tabs[0];
+  const readOnly = !canEdit(mods, current === "asistencia" ? "attendance" : "objectives");
 
   return (
     <div className="space-y-4">
@@ -68,15 +75,15 @@ export function PracticeScreen() {
             <input type="date" className="field-input" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} />
           </label>
         </div>
-        <div className="grid grid-cols-2 gap-1 rounded-xl bg-orc-chip p-1" role="tablist">
-          {(["asistencia", "objetivos"] as Tab[]).map((t) => (
+        <div className={`grid gap-1 rounded-xl bg-orc-chip p-1 ${tabs.length > 1 ? "grid-cols-2" : "grid-cols-1"}`} role="tablist">
+          {tabs.map((t) => (
             <button
               key={t}
               type="button"
               role="tab"
-              aria-selected={tab === t}
+              aria-selected={current === t}
               onClick={() => setTab(t)}
-              className={`rounded-lg py-2 text-sm font-bold ${tab === t ? "bg-orc-surface shadow-sm" : "text-orc-muted"}`}
+              className={`rounded-lg py-2 text-sm font-bold ${current === t ? "bg-orc-surface shadow-sm" : "text-orc-muted"}`}
             >
               {t === "asistencia" ? "Asistencia" : "Objetivos"}
             </button>
@@ -84,11 +91,12 @@ export function PracticeScreen() {
         </div>
       </header>
 
+      {readOnly && <p className="rounded-lg tone-amber px-3 py-2 text-sm">Sólo para ver: no tenés habilitada la carga de {current === "asistencia" ? "asistencia" : "objetivos"}.</p>}
       {categoryId &&
-        (tab === "asistencia" ? (
-          <AttendanceTab data={data} categoryId={categoryId} date={date} />
+        (current === "asistencia" ? (
+          <AttendanceTab data={data} categoryId={categoryId} date={date} readOnly={readOnly} />
         ) : (
-          <ObjectivesChecklist data={data} categoryId={categoryId} date={date} />
+          <ObjectivesChecklist data={data} categoryId={categoryId} date={date} readOnly={readOnly} />
         ))}
     </div>
   );

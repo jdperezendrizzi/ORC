@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { canEdit, canView } from "@/lib/modules";
 import { getViewer, isStaff } from "@/lib/server-data";
 import { AlertsList } from "@/components/alerts-list";
 import { WeeklySummaryCard, type WeeklySummaryView } from "@/components/weekly-summary";
@@ -25,7 +26,8 @@ const SUMMARY_METRICS = [
 
 export default async function CategoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { supabase, season, profile } = await getViewer();
+  const { supabase, season, profile, modules } = await getViewer();
+  const can = { perf: canView(modules, "performance"), perfEdit: canEdit(modules, "performance"), att: canView(modules, "attendance"), inj: canView(modules, "injuries"), insights: canView(modules, "insights"), generate: canEdit(modules, "insights"), share: canEdit(modules, "sharing"), promo: canView(modules, "promotion") };
   if (!season) notFound();
 
   const { data: category } = await supabase
@@ -92,7 +94,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
   const practiceDays = new Set(attendance.map((a) => a.att_date)).size;
 
   // Alertas y resumen semanal (sólo cuerpo técnico)
-  const staff = isStaff(profile);
+  const staff = isStaff(profile) && can.insights;
   const alertInput = staff ? await loadAlertInput(supabase, season, [category]) : null;
   const alerts = alertInput ? computeAlerts(alertInput) : [];
   const names = new Map(roster.map((r) => [r.player.id, `${r.player.last_name}, ${r.player.first_name}`]));
@@ -136,15 +138,17 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
           </p>
         </div>
         <div className="flex flex-wrap items-start justify-end gap-2">
-          {staff && (
+          {isStaff(profile) && can.promo && (
             <a href={`/categorias/${category.id}/pase`} className="btn-ghost">
               Pase de categoría
             </a>
           )}
-          <ExportCategoryButton categoryId={category.id} />
-          <a href={`/cargar?categoria=${category.id}`} className="btn-primary">
-            + Cargar
-          </a>
+          {can.share && <ExportCategoryButton categoryId={category.id} />}
+          {can.perfEdit && (
+            <a href={`/cargar?categoria=${category.id}`} className="btn-primary">
+              + Cargar
+            </a>
+          )}
         </div>
       </header>
 
@@ -156,6 +160,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
             summary={summary}
             action={generateWeeklySummary}
             aiEnabled={aiConfigured()}
+            canGenerate={can.generate}
           />
           <AlertsList alerts={alerts} names={names} />
         </>
@@ -169,12 +174,12 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
               <th className="px-3 py-2">Jugador</th>
               <th className="px-3 py-2">Puesto</th>
               <th className="px-3 py-2">Edad</th>
-              {SUMMARY_METRICS.map((m) => (
+              {(can.perf ? SUMMARY_METRICS : []).map((m) => (
                 <th key={m.code} className="px-3 py-2 text-right">
                   {m.label}
                 </th>
               ))}
-              <th className="px-3 py-2 text-right" title="Asistencia de la temporada">Asist.</th>
+              {can.att && <th className="px-3 py-2 text-right" title="Asistencia de la temporada">Asist.</th>}
               <th className="px-3 py-2">Estado</th>
             </tr>
           </thead>
@@ -192,18 +197,18 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
                   </td>
                   <td className="px-3 py-2">{r.position_id ? positions.get(r.position_id)?.short_name : "—"}</td>
                   <td className="px-3 py-2 tabular-nums">{ageOn(r.player.birth_date)}</td>
-                  {SUMMARY_METRICS.map((m) => (
+                  {(can.perf ? SUMMARY_METRICS : []).map((m) => (
                     <td key={m.code} className="px-3 py-2 text-right tabular-nums">
                       {formatValue(best.get(`${pid}:${m.code}`), m.decimals)}
                     </td>
                   ))}
-                  <td className="px-3 py-2 text-right tabular-nums">
+                  {can.att && <td className="px-3 py-2 text-right tabular-nums">
                     {(() => {
                       const r = attRate.get(pid);
                       if (!r || r.pct === null) return "—";
                       return <span className={r.pct < 60 ? "font-bold text-red-700 dark:text-red-400" : ""}>{r.pct}%</span>;
                     })()}
-                  </td>
+                  </td>}
                   <td className="space-x-1 px-3 py-2 whitespace-nowrap">
                     {status && <span className={`chip ${injuryStatusTone[status]}`}>{injuryStatusLabel[status]}</span>}
                     {!has(pid, "performance_data") && (

@@ -20,6 +20,7 @@ import type {
 import { cacheGet, cachePut } from "./db";
 import { fetchAll } from "../fetch-all";
 import type { AttendanceRow } from "../attendance";
+import { effectiveModules, type AppModule, type ModuleLevel, type Modules } from "../modules";
 
 export interface FieldData {
   profile: Profile;
@@ -31,6 +32,13 @@ export interface FieldData {
   roster: RosterPlayer[];
   sessions: EvaluationSession[];
   consents: Consent[];
+  /** Niveles por módulo (puede faltar en datos guardados por versiones anteriores). */
+  modules?: Modules;
+}
+
+/** Niveles por módulo del usuario de la cancha (con respaldo por rol). */
+export function fieldModules(data: FieldData): Modules {
+  return data.modules ?? effectiveModules(data.profile.role, data.profile.active);
 }
 
 const FIELD_KEY = "field";
@@ -57,6 +65,13 @@ export async function refreshFieldData(supabase: SupabaseClient): Promise<FieldD
     await supabase.from("profiles").select("id, full_name, email, role, active").eq("id", user.id).single(),
     "perfil",
   ) as Profile;
+
+  const { data: overrides } = await supabase.from("user_module_permissions").select("module, level").eq("profile_id", user.id);
+  const modules = effectiveModules(
+    profile.role,
+    profile.active,
+    Object.fromEntries((overrides ?? []).map((o) => [o.module as AppModule, o.level as ModuleLevel])),
+  );
 
   const season = must(
     await supabase.from("seasons").select("id, name, is_current").eq("is_current", true).maybeSingle(),
@@ -143,6 +158,7 @@ export async function refreshFieldData(supabase: SupabaseClient): Promise<FieldD
     roster,
     sessions: must(sessions, "sesiones") as EvaluationSession[],
     consents: must(consents, "consentimientos") as Consent[],
+    modules,
   };
   await cachePut(FIELD_KEY, data);
   return data;

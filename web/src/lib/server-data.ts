@@ -4,6 +4,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "./supabase/server";
 import type { Category, Profile, Season } from "./types";
+import { effectiveModules, type AppModule, type ModuleLevel } from "./modules";
 
 /** Usuario + perfil + temporada actual (memoizado por request). */
 export const getViewer = cache(async () => {
@@ -13,16 +14,24 @@ export const getViewer = cache(async () => {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: profile }, { data: season }] = await Promise.all([
+  const [{ data: profile }, { data: season }, { data: overrides }] = await Promise.all([
     supabase.from("profiles").select("id, full_name, email, role, active").eq("id", user.id).maybeSingle(),
     supabase.from("seasons").select("id, name, is_current").eq("is_current", true).maybeSingle(),
+    supabase.from("user_module_permissions").select("module, level").eq("profile_id", user.id),
   ]);
+  const p = profile as Profile | null;
 
   return {
     supabase,
     user,
-    profile: profile as Profile | null,
+    profile: p,
     season: season as Season | null,
+    /** Niveles por módulo (la base aplica lo mismo en RLS). */
+    modules: effectiveModules(
+      p?.role ?? "player",
+      !!p?.active,
+      Object.fromEntries((overrides ?? []).map((o) => [o.module as AppModule, o.level as ModuleLevel])),
+    ),
   };
 });
 

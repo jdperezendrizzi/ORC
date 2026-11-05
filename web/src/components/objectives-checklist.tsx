@@ -14,7 +14,7 @@ import { useSync } from "./sync-provider";
 const d = (iso: string) => formatDate(iso, { day: "numeric", month: "short" });
 
 /** Checklist de objetivos de la categoría en una práctica. Funciona sin señal. */
-export function ObjectivesChecklist({ data, categoryId, date }: { data: FieldData; categoryId: string; date: string }) {
+export function ObjectivesChecklist({ data, categoryId, date, readOnly = false }: { data: FieldData; categoryId: string; date: string; readOnly?: boolean }) {
   const { items, lastSyncAt } = useSync();
   const [obj, setObj] = useState<ObjectivesData | null>(null);
   const today = clubToday();
@@ -48,7 +48,7 @@ export function ObjectivesChecklist({ data, categoryId, date }: { data: FieldDat
     [obj, categoryId],
   );
 
-  const canCheck = date <= today;
+  const canCheck = date <= today && !readOnly;
   async function mark(o: Objective, achieved: boolean, note?: string | null) {
     if (!canCheck) return;
     const id = await objectiveCheckId(o.id, date, null);

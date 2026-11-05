@@ -3,6 +3,8 @@ import { loadCatalog, requireAdmin, ROLE_OPTIONS } from "@/lib/admin";
 import { canInviteByEmail } from "@/lib/supabase/admin";
 import type { Category, Profile } from "@/lib/types";
 import { inviteUser, updateUser } from "../actions";
+import { ModulePermissions } from "./module-permissions";
+import { effectiveModules, type AppModule, type ModuleLevel } from "@/lib/modules";
 import { Field } from "../jugadores/player-fields";
 
 export const dynamic = "force-dynamic";
@@ -10,13 +12,20 @@ export const dynamic = "force-dynamic";
 export default async function AdminUsers() {
   const { supabase, season, user } = await requireAdmin();
   const { categories } = await loadCatalog();
-  const [profilesRes, assignRes] = await Promise.all([
+  const [profilesRes, assignRes, permsRes] = await Promise.all([
     supabase.from("profiles").select("id, full_name, email, role, active").order("active").order("full_name"),
     supabase
       .from("coach_assignments")
       .select("profile_id, category_id")
       .eq("season_id", season?.id ?? "00000000-0000-0000-0000-000000000000"),
+    supabase.from("user_module_permissions").select("profile_id, module, level"),
   ]);
+  const overrides = new Map<string, Partial<Record<AppModule, ModuleLevel>>>();
+  for (const o of permsRes.data ?? []) {
+    const m = overrides.get(o.profile_id as string) ?? {};
+    m[o.module as AppModule] = o.level as ModuleLevel;
+    overrides.set(o.profile_id as string, m);
+  }
   const profiles = (profilesRes.data ?? []) as Profile[];
   const assigned = new Map<string, Set<string>>();
   for (const a of assignRes.data ?? []) {
@@ -94,6 +103,13 @@ export default async function AdminUsers() {
                   Activo (puede entrar y ver datos)
                 </label>
               </ActionForm>
+              <ModulePermissions
+                profileId={p.id}
+                role={p.role}
+                effective={effectiveModules(p.role, true, overrides.get(p.id))}
+                restricted={Object.keys(overrides.get(p.id) ?? {}).length}
+                others={profiles.filter((o) => o.id !== p.id && o.role === p.role && overrides.has(o.id)).map((o) => ({ id: o.id, name: o.full_name }))}
+              />
             </li>
           ))}
         </ul>

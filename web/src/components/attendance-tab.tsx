@@ -16,12 +16,12 @@ const STATUS: { value: AttendanceStatus; short: string; on: string }[] = [
 ];
 
 /** Tomar asistencia de la categoría en un día. Funciona sin señal. */
-export function AttendanceTab({ data, categoryId, date }: { data: FieldData; categoryId: string; date: string }) {
+export function AttendanceTab({ data, categoryId, date, readOnly = false }: { data: FieldData; categoryId: string; date: string; readOnly?: boolean }) {
   const { items, lastSyncAt } = useSync();
   const [server, setServer] = useState<AttendanceRow[]>([]);
   const [kind, setKind] = useState<AttendanceKind>("practice");
   const today = clubToday();
-  const editable = date <= today;
+  const editable = date <= today && !readOnly;
 
   const players = useMemo(
     () => data.roster.filter((p) => p.category_id === categoryId).sort((a, b) => a.last_name.localeCompare(b.last_name)),

@@ -1,5 +1,7 @@
 "use client";
 
+import { canEdit } from "@/lib/modules";
+import { fieldModules } from "@/lib/offline/field-data";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useFieldData } from "../use-field-data";
@@ -43,6 +45,9 @@ export function LoadScreen() {
   }
   if (data.profile.role !== "admin" && data.profile.role !== "coach") {
     return <p className="card mt-6 text-center text-orc-muted">Tu rol no carga evaluaciones.</p>;
+  }
+  if (!canEdit(fieldModules(data), "performance")) {
+    return <p className="card mt-6 text-center text-orc-muted">No tenés habilitada la carga de rendimiento. Pedíselo al admin.</p>;
   }
 
   const session = sessions.find((s) => s.id === sessionId) ?? null;

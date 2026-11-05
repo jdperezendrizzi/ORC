@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useSync } from "./sync-provider";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { clearLocalData } from "@/lib/offline/db";
+import { canEdit, canView, type Modules } from "@/lib/modules";
 
 // Navegación con <a> (carga completa) a propósito: así funciona también
 // sin señal, servida por el service worker.
@@ -53,13 +54,14 @@ function Icon({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function navItems(canLoad: boolean, isAdmin = false): NavItem[] {
+export function navItems(canLoad: boolean, isAdmin = false, modules?: Modules): NavItem[] {
+  const view = (m: Parameters<typeof canView>[1]) => !modules || canView(modules, m);
   return [
     { href: "/", label: "Inicio", icon: <Icon>{icons.home}</Icon> },
-    ...(canLoad ? [{ href: "/cargar", label: "Cargar", icon: <Icon>{icons.load}</Icon> }] : []),
-    { href: "/bienestar", label: "Bienestar", icon: <Icon>{icons.wellness}</Icon> },
-    ...(canLoad ? [{ href: "/practica", label: "Práctica", icon: <Icon>{icons.objectives}</Icon> }] : []),
-    { href: "/lesiones", label: "Lesiones", icon: <Icon>{icons.injuries}</Icon> },
+    ...(canLoad && (!modules || canEdit(modules, "performance")) ? [{ href: "/cargar", label: "Cargar", icon: <Icon>{icons.load}</Icon> }] : []),
+    ...(view("wellness") ? [{ href: "/bienestar", label: "Bienestar", icon: <Icon>{icons.wellness}</Icon> }] : []),
+    ...(canLoad && (view("attendance") || view("objectives")) ? [{ href: "/practica", label: "Práctica", icon: <Icon>{icons.objectives}</Icon> }] : []),
+    ...(view("injuries") ? [{ href: "/lesiones", label: "Lesiones", icon: <Icon>{icons.injuries}</Icon> }] : []),
     ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: <Icon>{icons.admin}</Icon> }] : []),
   ];
 }
@@ -68,11 +70,11 @@ function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
-export function TopNav({ canLoad, isAdmin = false }: { canLoad: boolean; isAdmin?: boolean }) {
+export function TopNav({ canLoad, isAdmin = false, modules }: { canLoad: boolean; isAdmin?: boolean; modules?: Modules }) {
   const pathname = usePathname();
   return (
     <nav className="hidden items-center gap-1 md:flex" aria-label="Principal">
-      {navItems(canLoad, isAdmin).map((i) => (
+      {navItems(canLoad, isAdmin, modules).map((i) => (
         <a
           key={i.href}
           href={i.href}
@@ -87,9 +89,9 @@ export function TopNav({ canLoad, isAdmin = false }: { canLoad: boolean; isAdmin
   );
 }
 
-export function BottomNav({ canLoad, isAdmin = false }: { canLoad: boolean; isAdmin?: boolean }) {
+export function BottomNav({ canLoad, isAdmin = false, modules }: { canLoad: boolean; isAdmin?: boolean; modules?: Modules }) {
   const pathname = usePathname();
-  const items = navItems(canLoad, isAdmin);
+  const items = navItems(canLoad, isAdmin, modules);
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-orc-black pb-[env(safe-area-inset-bottom)] md:hidden"

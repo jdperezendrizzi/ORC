@@ -1,5 +1,6 @@
 "use server";
 
+import { canEdit } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/action-form";
 import { aiWeeklySummary } from "@/lib/ai";
@@ -13,8 +14,8 @@ const MIN_REGENERATE_MS = 5 * 60_000;
 
 /** Genera (o actualiza) el resumen de la semana de una categoría. */
 export async function generateWeeklySummary(_: ActionResult, f: FormData): Promise<ActionResult> {
-  const { supabase, profile, season } = await getViewer();
-  if (!isStaff(profile) || !season) return { error: "No tenés permiso para generar el resumen." };
+  const { supabase, profile, season, modules } = await getViewer();
+  if (!isStaff(profile) || !season || !canEdit(modules, "insights")) return { error: "No tenés permiso para generar el resumen." };
   const categoryId = String(f.get("category_id") ?? "");
   const category = (await getViewerCategories()).find((c) => c.id === categoryId);
   if (!category) return { error: "No tenés acceso a esta categoría." };

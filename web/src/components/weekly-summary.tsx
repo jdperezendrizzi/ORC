@@ -19,12 +19,14 @@ export function WeeklySummaryCard({
   summary,
   action,
   aiEnabled,
+  canGenerate = true,
 }: {
   categoryId: string;
   categoryName: string;
   summary: WeeklySummaryView | null;
   action: FormAction;
   aiEnabled: boolean;
+  canGenerate?: boolean;
 }) {
   const [state, formAction] = useActionState(action, {} as ActionResult);
   const [copied, setCopied] = useState(false);
@@ -78,7 +80,7 @@ export function WeeklySummaryCard({
 
       <form action={formAction} className="flex flex-wrap items-center gap-2">
         <input type="hidden" name="category_id" value={categoryId} />
-        <GenerateButton label={summary ? "Actualizar" : "Generar resumen"} />
+        {canGenerate && <GenerateButton label={summary ? "Actualizar" : "Generar resumen"} />}
         {summary && (
           <>
             <button type="button" className="btn-ghost h-10" onClick={() => void share()}>

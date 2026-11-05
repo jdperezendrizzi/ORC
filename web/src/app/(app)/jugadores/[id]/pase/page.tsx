@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { canEdit, canView } from "@/lib/modules";
 import { notFound } from "next/navigation";
 import { ActionForm } from "@/components/action-form";
 import { getViewer, getViewerCategories, isStaff } from "@/lib/server-data";
@@ -23,13 +24,13 @@ export default async function PromotionSheetPage({
 }) {
   const { id } = await params;
   const { ref } = await searchParams;
-  const { supabase, season, profile } = await getViewer();
-  if (!season || !isStaff(profile)) notFound();
+  const { supabase, season, profile, modules } = await getViewer();
+  if (!season || !isStaff(profile) || !canView(modules, "promotion")) notFound();
   const sheet = await loadPlayerSheet(supabase, season, id, ref);
   if (!sheet) notFound();
 
   const isAdmin = profile!.role === "admin";
-  const canRecommend = isAdmin || (profile!.role === "coach" && (await getViewerCategories()).some((c) => c.id === sheet.category.id));
+  const canRecommend = canEdit(modules, "promotion") && (isAdmin || (profile!.role === "coach" && (await getViewerCategories()).some((c) => c.id === sheet.category.id)));
   const s = sheet;
   const tests = aboveMedianCount(s.metrics.map((m) => m.standing));
   const refName = s.target ? `${s.target.name}${s.unit ? ` (${unitLabel[s.unit]})` : ""}` : "—";
@@ -86,7 +87,9 @@ export default async function PromotionSheetPage({
             datos agregados; hacen falta al menos 3). <b>Rango típico</b>: la mitad del medio (del 25 % al 75 %).
           </p>
         </div>
-        {!s.hasPerfConsent ? (
+        {!canView(modules, "performance") ? (
+          <p className="text-sm text-orc-muted">No tenés habilitado el módulo de rendimiento.</p>
+        ) : !s.hasPerfConsent ? (
           <p className="rounded-lg tone-amber px-3 py-2 text-sm">Sin consentimiento de datos de rendimiento: no hay datos físicos.</p>
         ) : s.metrics.length === 0 ? (
           <p className="text-sm text-orc-muted">Todavía no tiene tests físicos esta temporada.</p>

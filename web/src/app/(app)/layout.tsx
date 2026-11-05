@@ -4,7 +4,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { canLoadResults, getViewer, roleLabel } from "@/lib/server-data";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { profile } = await getViewer();
+  const { profile, modules } = await getViewer();
   const canLoad = canLoadResults(profile);
   const isAdmin = !!profile?.active && profile.role === "admin";
 
@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </span>
           </a>
           <div className="ml-4 flex-1">
-            <TopNav canLoad={canLoad} isAdmin={isAdmin} />
+            <TopNav canLoad={canLoad} isAdmin={isAdmin} modules={modules} />
           </div>
           <ThemeToggle />
           <SyncBadge />
@@ -51,7 +51,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <LogoutButton />
             </span>
           </footer>
-          <BottomNav canLoad={canLoad} isAdmin={isAdmin} />
+          <BottomNav canLoad={canLoad} isAdmin={isAdmin} modules={modules} />
           <PrecacheFieldPages />
         </>
       )}

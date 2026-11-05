@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { canView } from "@/lib/modules";
 import { notFound } from "next/navigation";
 import { getViewer, isStaff } from "@/lib/server-data";
 import { loadCategorySheet } from "@/lib/promotion-server";
@@ -17,8 +18,8 @@ export default async function CategoryPromotionPage({
 }) {
   const { id } = await params;
   const { ref } = await searchParams;
-  const { supabase, season, profile } = await getViewer();
-  if (!season || !isStaff(profile)) notFound();
+  const { supabase, season, profile, modules } = await getViewer();
+  if (!season || !isStaff(profile) || !canView(modules, "promotion")) notFound();
   const { data: category } = await supabase.from("categories").select("id, code, name, level, sort_order").eq("id", id).maybeSingle<Category>();
   if (!category) notFound();
   const { target, targetOptions, objectives, rows } = await loadCategorySheet(supabase, season, category, ref);

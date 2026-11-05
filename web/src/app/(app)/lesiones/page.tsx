@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { canEdit, canView } from "@/lib/modules";
 import Link from "next/link";
 import { PendingInjuries } from "@/components/pending-injuries";
 import { getViewer, getViewerCategories } from "@/lib/server-data";
@@ -27,7 +28,9 @@ const daysBetween = (a: string, b: string) => Math.round((Date.parse(b) - Date.p
 
 export default async function InjuriesPage({ searchParams }: { searchParams: Promise<{ categoria?: string }> }) {
   const { categoria = "" } = await searchParams;
-  const { supabase, season } = await getViewer();
+  const { supabase, season, modules } = await getViewer();
+  if (!canView(modules, "injuries")) return <p className="card">No tenés habilitado el módulo de lesiones.</p>;
+  const canRegister = canEdit(modules, "injuries");
   const categories = await getViewerCategories();
   const today = clubToday();
 
@@ -104,9 +107,11 @@ export default async function InjuriesPage({ searchParams }: { searchParams: Pro
               </button>
             </form>
           )}
-          <Link href="/lesiones/nueva" className="btn-primary h-10">
-            + Registrar lesión
-          </Link>
+          {canRegister && (
+            <Link href="/lesiones/nueva" className="btn-primary h-10">
+              + Registrar lesión
+            </Link>
+          )}
         </div>
       </header>
 

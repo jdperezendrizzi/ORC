@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { canEdit, canView } from "@/lib/modules";
 import { ABSENCE_STREAK, absenceStreak, attendanceKindLabel, attendancePct, countByStatus, type AttendanceRow } from "@/lib/attendance";
 import { PlayerEvolution, ZBar, type MetricSeries } from "@/components/player-charts";
 import { HowToRead, InfoHeader } from "@/components/info";
@@ -36,7 +37,8 @@ const consentLabel: Record<string, string> = {
 
 export default async function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { supabase, season, profile } = await getViewer();
+  const { supabase, season, profile, modules } = await getViewer();
+  const can = { perf: canView(modules, "performance"), well: canView(modules, "wellness"), att: canView(modules, "attendance"), inj: canView(modules, "injuries"), injEdit: canEdit(modules, "injuries"), share: canEdit(modules, "sharing"), promo: canView(modules, "promotion") };
 
   const { data: player } = await supabase
     .from("players")
@@ -213,8 +215,8 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
           ))}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
-          <ShareReportButton playerId={id} data={report} blockedReason={shareBlocked} />
-          {psc?.category && (
+          {can.share && <ShareReportButton playerId={id} data={report} blockedReason={shareBlocked} />}
+          {psc?.category && can.promo && (
             <a href={`/jugadores/${id}/pase`} className="btn-ghost h-10 border-white/30 text-white">
               Ficha de pase →
             </a>
@@ -233,13 +235,15 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
       />
 
       {/* Evolución */}
+      {can.perf && (
       <section className="card">
         <InfoHeader title={<h2 className="font-bold">Evolución</h2>} info={CONCEPTS.evolution} className="mb-3" />
         <PlayerEvolution metrics={series.filter((s) => s.series.length > 0)} />
       </section>
+      )}
 
       {/* Última medición por dominio */}
-      {[...byDomain.entries()].map(([domain, items]) => (
+      {can.perf && [...byDomain.entries()].map(([domain, items]) => (
         <section key={domain}>
           <h2 className="text-sm font-bold uppercase tracking-wide text-orc-muted">{domainLabel[domain] ?? domain}</h2>
           {DOMAIN_INFO[domain] && <p className="mb-2 text-sm text-orc-muted">{DOMAIN_INFO[domain]}</p>}
@@ -282,7 +286,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Maduración */}
-        {maturation && age < 19 && (
+        {can.perf && maturation && age < 19 && (
           <section className="card">
             <InfoHeader title={<h2 className="font-bold">Maduración</h2>} info={CONCEPTS.maturation} />
             <p className="mt-1 text-xs text-orc-muted">Estimación de Mirwald · {formatDate(maturation.session_date)}</p>
@@ -306,6 +310,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         )}
 
         {/* Carga y bienestar */}
+        {can.well && (
         <section className="card">
           <InfoHeader
             title={<h2 className="font-bold">Carga y bienestar</h2>}
@@ -359,9 +364,11 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
             </table>
           )}
         </section>
+        )}
       </div>
 
       {/* Asistencia */}
+      {can.att && (
       <section className="card space-y-2">
         <h2 className="font-bold">Asistencia de la temporada</h2>
         {attendance.length === 0 ? (
@@ -389,14 +396,18 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
           </>
         )}
       </section>
+      )}
 
       {/* Lesiones */}
+      {can.inj && (
       <section className="card">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-bold">Historial de lesiones</h2>
-          <a href={`/lesiones/nueva?jugador=${id}`} className="text-sm font-semibold text-orc-orange-strong">
-            + Registrar lesión
-          </a>
+          {can.injEdit && (
+            <a href={`/lesiones/nueva?jugador=${id}`} className="text-sm font-semibold text-orc-orange-strong">
+              + Registrar lesión
+            </a>
+          )}
         </div>
         {injuries.length === 0 ? (
           <p className="mt-2 text-sm text-orc-muted">Sin lesiones registradas.</p>
@@ -422,6 +433,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
           </ul>
         )}
       </section>
+      )}
     </div>
   );
 }

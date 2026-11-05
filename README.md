@@ -149,3 +149,14 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
 * **Categoría → Pase de categoría**: todo el plantel con asistencia, tests en la mediana o mejor, recomendación y
   decisión, para la reunión de fin de año.
 * La decisión queda registrada; el cambio de categoría se aplica al armar la temporada siguiente.
+
+### Permisos por módulo
+
+* **Admin → Usuarios → (usuario) → Permisos por módulo**: para cada módulo (Rendimiento, Bienestar, Asistencia,
+  Objetivos, Lesiones, Pase de categoría, Resumen y alertas, Compartir) un nivel: **No ve · Ve · Carga**.
+* **El rol define el máximo** (profe: todo en Carga; área médica: Rendimiento, Asistencia y Pase en Ve, Objetivos no,
+  el resto Carga) y por usuario **sólo se restringe**. El admin siempre tiene todo. Sin restricciones = como antes.
+* Se combina con las categorías asignadas y se aplica **en la base** (`private.can_view` / `private.can_edit` en las
+  políticas RLS, benchmarks y funciones de compartir), no sólo en el menú. Tabla `user_module_permissions` (sólo
+  guarda las restricciones; auditada). "Copiar permisos de…" y "Volver a los permisos del rol".
+* No cambian: notas clínicas (área médica/admin), consentimientos, decisión de pase y Admin (sólo admin).

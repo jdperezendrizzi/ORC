@@ -1,4 +1,5 @@
 import { LogoutButton } from "@/components/app-chrome";
+import { canEdit, canView } from "@/lib/modules";
 import { TeamDashboard } from "@/components/team-dashboard";
 import { loadDashboard } from "@/lib/dashboard-server";
 import { AlertsList } from "@/components/alerts-list";
@@ -10,7 +11,7 @@ import { formatDate, injuryStatusLabel, injuryStatusTone, sessionTypeLabel } fro
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const { supabase, profile, season } = await getViewer();
+  const { supabase, profile, season, modules } = await getViewer();
   const categories = await getViewerCategories();
   const categoryIds = categories.map((c) => c.id);
 
@@ -44,7 +45,8 @@ export default async function HomePage() {
   ]);
 
   const dashboard = await loadDashboard(supabase, season, categories);
-  const alerts = isStaff(profile) ? computeAlerts(await loadAlertInput(supabase, season, categories, dashboard)) : [];
+  const showAlerts = isStaff(profile) && canView(modules, "insights");
+  const alerts = showAlerts ? computeAlerts(await loadAlertInput(supabase, season, categories, dashboard)) : [];
   const playerNames = new Map(dashboard.players.map((p) => [p.id, p.name]));
   const roster = rosterRes.data ?? [];
   const playerCategory = new Map(roster.map((r) => [r.player_id as string, r.category_id as string]));
@@ -68,18 +70,22 @@ export default async function HomePage() {
         <h1 className="text-2xl font-black">Hola, {profile?.full_name?.split(" ")[0]}</h1>
       </section>
 
-      {canLoadResults(profile) && (
+      {canLoadResults(profile) && (canEdit(modules, "performance") || canEdit(modules, "wellness")) && (
         <section className="grid grid-cols-2 gap-3">
-          <a href="/cargar" className="btn-primary h-16 text-base">
-            + Cargar datos
-          </a>
-          <a href="/bienestar" className="btn-dark h-16 text-base">
-            Bienestar del día
-          </a>
+          {canEdit(modules, "performance") && (
+            <a href="/cargar" className="btn-primary h-16 text-base">
+              + Cargar datos
+            </a>
+          )}
+          {canEdit(modules, "wellness") && (
+            <a href="/bienestar" className="btn-dark h-16 text-base">
+              Bienestar del día
+            </a>
+          )}
         </section>
       )}
 
-      {isStaff(profile) && (
+      {showAlerts && (
         <AlertsList
           alerts={alerts}
           names={playerNames}
@@ -88,7 +94,7 @@ export default async function HomePage() {
         />
       )}
 
-      <TeamDashboard data={dashboard} />
+      {canView(modules, "performance") && <TeamDashboard data={dashboard} />}
 
       <a href="/guia" className="card flex items-center gap-3 py-3 hover:border-orc-orange">
         <span className="grid size-9 shrink-0 place-items-center rounded-full bg-orc-orange-soft text-lg font-black text-orc-orange-strong">

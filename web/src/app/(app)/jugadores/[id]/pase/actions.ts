@@ -1,5 +1,6 @@
 "use server";
 
+import { canEdit } from "@/lib/modules";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/action-form";
 import { getViewer, getViewerCategories } from "@/lib/server-data";
@@ -8,8 +9,9 @@ const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const OUTCOMES = new Set(["promote", "stay", "observe"]);
 
 async function save(f: FormData, kind: "recommendation" | "decision"): Promise<ActionResult> {
-  const { supabase, profile, season } = await getViewer();
+  const { supabase, profile, season, modules } = await getViewer();
   if (!season || !profile?.active) return { error: "No hay temporada actual." };
+  if (!canEdit(modules, "promotion")) return { error: "No tenés habilitado el pase de categoría." };
   const playerId = str(f, "player_id");
   const fromId = str(f, "from_category_id");
   const outcome = str(f, "outcome");

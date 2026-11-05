@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { canEdit } from "@/lib/modules";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionForm } from "@/components/action-form";
@@ -32,8 +33,8 @@ export default async function InjuryDetail({
 }) {
   const { id } = await params;
   const { nueva } = await searchParams;
-  const { supabase, profile } = await getViewer();
-  const manage = canManageInjuries(profile);
+  const { supabase, profile, modules } = await getViewer();
+  const manage = canManageInjuries(profile) && canEdit(modules, "injuries");
 
   const { data: inj } = await supabase
     .from("injuries")
