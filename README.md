@@ -207,3 +207,14 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
   `web/public/crest.png` (514×560) para los PDF; íconos de la app y favicon en `web/public/icons/` generados del mismo SVG.
 * Naranja oficial **#F65F01** (`--color-orc-orange`), siempre con texto negro (5,1:1). Texto/links naranjas:
   `#A84000` en tema claro y `#FF8A3D` en oscuro (≥ 5:1); hover `#FF7A24`.
+
+### Despertador (plan gratis de Supabase)
+
+* Supabase pausa los proyectos gratis tras **7 días sin actividad** (Vercel no pausa). `web/vercel.json` programa un
+  **Vercel Cron diario** a `/api/keepalive`, que llama a `public.keepalive()` (lee y escribe en la base). Cuenta como
+  mucho un ping por minuto.
+* En Vercel → Settings → Environment Variables, definir **`CRON_SECRET`** (un texto largo al azar): Vercel lo manda
+  en cada llamada y la ruta rechaza las que no lo traen. Sin la variable, la ruta responde a cualquiera (sólo actualiza
+  la hora del último ping).
+* Para ver que anda: Vercel → proyecto → *Cron Jobs* (historial de ejecuciones) o, en Supabase,
+  `select * from private.keepalive;`.

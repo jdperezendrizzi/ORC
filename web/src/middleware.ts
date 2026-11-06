@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Todo salvo estáticos, íconos, manifest y service worker.
-    "/((?!_next/static|_next/image|icons/|crest.png|logo.svg|favicon.ico|manifest.webmanifest|sw.js).*)",
+    // Todo salvo estáticos, íconos, manifest, service worker y el despertador (Vercel Cron).
+    "/((?!_next/static|_next/image|icons/|crest.png|logo.svg|favicon.ico|manifest.webmanifest|sw.js|api/keepalive).*)",
   ],
 };
