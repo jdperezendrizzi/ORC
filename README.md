@@ -222,3 +222,15 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
   la hora del último ping).
 * Para ver que anda: Vercel → proyecto → *Cron Jobs* (historial de ejecuciones) o, en Supabase,
   `select * from private.keepalive;`.
+
+### Portal "Mi jugador" (jugador y familia, solo lectura)
+
+* **Admin → Jugadores → (jugador) → Acceso «Mi jugador»**: dar o quitar acceso al jugador y a cada tutor por email. Si
+  la cuenta existe se vincula; si no, se invita por email (requiere `SUPABASE_SERVICE_ROLE_KEY`; sin ella, crear la
+  cuenta en Supabase y volver a tocar "Dar acceso"). Quitar el acceso desvincula y desactiva la cuenta.
+* Entran a `/mi-jugador` (sin el menú del cuerpo técnico; cualquier otra pantalla los devuelve ahí): datos básicos,
+  asistencia, objetivos (del jugador o del equipo) y evolución física propia. **No** ven lesiones, bienestar, datos
+  privados, evaluación de pase, comparaciones ni a otros jugadores.
+* Reglas en la base (`private.my_player_ids`): el tutor necesita el consentimiento **«Acceso de la familia»**
+  vigente; el jugador menor, también; el mayor de edad ve lo suyo. Cuenta inactiva = nada. Políticas de solo lectura
+  que se suman a las del cuerpo técnico (`tests/db/15_family_portal.sql`).

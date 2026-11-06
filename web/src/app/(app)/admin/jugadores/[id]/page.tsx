@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PortalAccess, type AccessRow } from "./portal-access";
 import { notFound } from "next/navigation";
 import { ActionForm, InlineAction } from "@/components/action-form";
 import { Collapsible } from "@/components/collapsible";
@@ -35,7 +36,7 @@ export default async function AdminPlayer({
   const [playerRes, pscRes, linksRes, consentsRes, privRes] = await Promise.all([
     supabase
       .from("players")
-      .select("id, first_name, last_name, birth_date, sex, dominant_side, primary_position_id, secondary_position_id, active")
+      .select("id, first_name, last_name, birth_date, sex, dominant_side, primary_position_id, secondary_position_id, active, profile_id")
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -46,7 +47,7 @@ export default async function AdminPlayer({
       .maybeSingle(),
     supabase
       .from("player_guardians")
-      .select("guardian_id, relationship, is_primary, guardian:guardians(id, full_name, phone, email, document_id)")
+      .select("guardian_id, relationship, is_primary, guardian:guardians(id, full_name, phone, email, document_id, profile_id)")
       .eq("player_id", id),
     supabase
       .from("consents")
@@ -67,7 +68,7 @@ export default async function AdminPlayer({
     guardian_id: string;
     relationship: string;
     is_primary: boolean;
-    guardian: { id: string; full_name: string; phone: string | null; email: string | null; document_id: string | null } | null;
+    guardian: { id: string; full_name: string; phone: string | null; email: string | null; document_id: string | null; profile_id: string | null } | null;
   };
   const guardians = ((linksRes.data ?? []) as unknown as Link_[]).filter((l) => l.guardian);
   const guardianName = new Map(guardians.map((g) => [g.guardian_id, g.guardian!.full_name]));
@@ -78,6 +79,34 @@ export default async function AdminPlayer({
   const age = ageOn(player.birth_date as string, clubToday());
   const minor = age < 18;
   const pending = CONSENT_TYPES.filter((t) => !active.has(t.code));
+
+  // Acceso al portal «Mi jugador»
+  const linkedIds = [player.profile_id as string | null, ...guardians.map((g) => g.guardian!.profile_id)].filter((x): x is string => !!x);
+  const { data: linkedProfiles } = linkedIds.length
+    ? await supabase.from("profiles").select("id, email, active").in("id", linkedIds)
+    : { data: [] as { id: string; email: string | null; active: boolean }[] };
+  const prof = new Map((linkedProfiles ?? []).map((p) => [p.id as string, p]));
+  const linkedOf = (pid: string | null) => {
+    const p = pid ? prof.get(pid) : undefined;
+    return p ? { profileId: p.id as string, email: (p.email as string) ?? "", active: !!p.active } : null;
+  };
+  const accessRows: AccessRow[] = [
+    {
+      kind: "player",
+      label: "Jugador",
+      name: `${player.first_name} ${player.last_name}`,
+      linked: linkedOf(player.profile_id as string | null),
+      suggestedEmail: (priv?.email as string) ?? "",
+    },
+    ...guardians.map((g) => ({
+      kind: "guardian" as const,
+      label: `Tutor (${g.relationship.replace("_", " ")})`,
+      name: g.guardian!.full_name,
+      guardianId: g.guardian_id,
+      linked: linkedOf(g.guardian!.profile_id),
+      suggestedEmail: g.guardian!.email ?? "",
+    })),
+  ];
 
   const checks = [
     { ok: Boolean(psc), text: psc ? `En ${categories.find((c) => c.id === psc.category_id)?.name}` : "Sin categoría en la temporada" },
@@ -326,6 +355,8 @@ export default async function AdminPlayer({
           </details>
         )}
       </section>
+
+      <PortalAccess playerId={id} rows={accessRows} minor={minor} familyConsent={active.has("data_sharing_family")} />
 
       {/* Datos privados */}
       <section className="card space-y-3">

@@ -1,9 +1,12 @@
+import { redirect } from "next/navigation";
 import { AccountMenu, BottomNav, LogoutButton, PrecacheFieldPages, SyncBadge, TopNav } from "@/components/app-chrome";
 import { SyncProvider } from "@/components/sync-provider";
 import { canLoadResults, getViewer, isStaff, roleLabel } from "@/lib/server-data";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, modules } = await getViewer();
+  // Jugadores y familias usan su propio portal de solo lectura.
+  if (profile && ["player", "guardian"].includes(profile.role)) redirect("/mi-jugador");
   const canLoad = canLoadResults(profile);
   const isAdmin = !!profile?.active && profile.role === "admin";
 
