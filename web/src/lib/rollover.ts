@@ -1,4 +1,4 @@
-// Pase de temporada: categoría propuesta para cada jugador (funciones puras).
+// Armar temporada: categoría propuesta para cada jugador (funciones puras).
 
 import type { Outcome } from "./promotion";
 

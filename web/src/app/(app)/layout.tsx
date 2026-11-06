@@ -1,7 +1,6 @@
-import { BottomNav, LogoutButton, PrecacheFieldPages, SyncBadge, TopNav } from "@/components/app-chrome";
+import { AccountMenu, BottomNav, LogoutButton, PrecacheFieldPages, SyncBadge, TopNav } from "@/components/app-chrome";
 import { SyncProvider } from "@/components/sync-provider";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { canLoadResults, getViewer, roleLabel } from "@/lib/server-data";
+import { canLoadResults, getViewer, isStaff, roleLabel } from "@/lib/server-data";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, modules } = await getViewer();
@@ -20,10 +19,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </span>
           </a>
           <div className="ml-4 flex-1">
-            <TopNav canLoad={canLoad} isAdmin={isAdmin} modules={modules} />
+            <TopNav canLoad={canLoad} isAdmin={isAdmin} isStaff={isStaff(profile)} modules={modules} />
           </div>
-          <ThemeToggle />
           <SyncBadge />
+          {profile && <AccountMenu name={profile.full_name} role={roleLabel[profile.role] ?? ""} />}
         </div>
         <div className="h-1 bg-orc-orange" aria-hidden />
       </header>
@@ -43,15 +42,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       ) : (
         <>
           <main className="mx-auto max-w-5xl px-4 pb-28 pt-4 md:pb-10">{children}</main>
-          <footer className="mx-auto hidden max-w-5xl items-center justify-between px-4 pb-6 text-sm text-orc-muted md:flex">
-            <span>
-              {profile?.full_name} · {roleLabel[profile?.role ?? ""] ?? ""}
-            </span>
-            <span className="rounded bg-orc-black px-3 py-1">
-              <LogoutButton />
-            </span>
-          </footer>
-          <BottomNav canLoad={canLoad} isAdmin={isAdmin} modules={modules} />
+          <BottomNav canLoad={canLoad} isAdmin={isAdmin} isStaff={isStaff(profile)} modules={modules} />
           <PrecacheFieldPages />
         </>
       )}

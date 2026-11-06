@@ -135,7 +135,7 @@ export function RolloverTable({
             )}
           </p>
           <button type="submit" className="btn-primary" disabled={moves.length === 0 || pending}>
-            {pending ? "Aplicando…" : "Aplicar pases"}
+            {pending ? "Pasando…" : "Pasar jugadores"}
           </button>
           <Message state={state} />
         </div>

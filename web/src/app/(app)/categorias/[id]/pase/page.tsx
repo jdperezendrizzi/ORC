@@ -6,7 +6,7 @@ import { loadCategorySheet } from "@/lib/promotion-server";
 import { outcomeLabel, outcomeTone } from "@/lib/promotion";
 import type { Category } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Pase de categoría" };
+export const metadata: Metadata = { title: "Evaluación de pase" };
 export const dynamic = "force-dynamic";
 
 export default async function CategoryPromotionPage({
@@ -31,7 +31,7 @@ export default async function CategoryPromotionPage({
         ← {category.name}
       </a>
       <header className="space-y-2">
-        <p className="text-sm text-orc-muted">Pase de categoría · temporada {season.name}</p>
+        <p className="text-sm text-orc-muted">Evaluación de pase · temporada {season.name}</p>
         <h1 className="text-2xl font-black">
           {category.name} {target ? `→ ${target.name}` : ""}
         </h1>
@@ -42,7 +42,7 @@ export default async function CategoryPromotionPage({
         </p>
         {canEdit(modules, "season_rollover") && (
           <a href={`/pase-de-temporada?categoria=${category.id}`} className="btn-primary inline-flex">
-            Aplicar pases a la temporada siguiente →
+            Armar la temporada siguiente →
           </a>
         )}
         {targetOptions.length > 1 && (

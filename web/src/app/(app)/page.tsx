@@ -1,11 +1,10 @@
-import { LogoutButton } from "@/components/app-chrome";
 import { canEdit, canView } from "@/lib/modules";
 import { TeamDashboard } from "@/components/team-dashboard";
 import { loadDashboard } from "@/lib/dashboard-server";
 import { AlertsList } from "@/components/alerts-list";
 import { computeAlerts } from "@/lib/alerts";
 import { loadAlertInput } from "@/lib/alerts-server";
-import { canLoadResults, getViewer, getViewerCategories, isStaff, roleLabel } from "@/lib/server-data";
+import { canLoadResults, getViewer, getViewerCategories, isStaff } from "@/lib/server-data";
 import { formatDate, injuryStatusLabel, injuryStatusTone, sessionTypeLabel } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
@@ -74,7 +73,7 @@ export default async function HomePage() {
         <section className="grid grid-cols-2 gap-3">
           {canEdit(modules, "performance") && (
             <a href="/cargar" className="btn-primary h-16 text-base">
-              + Cargar datos
+              + Cargar evaluación
             </a>
           )}
           {canEdit(modules, "wellness") && (
@@ -178,12 +177,6 @@ export default async function HomePage() {
         </section>
       )}
 
-      <section className="flex items-center justify-between rounded-xl bg-orc-black px-4 py-3 text-white md:hidden">
-        <span className="text-sm">
-          {profile?.full_name} · <span className="text-white/60">{roleLabel[profile?.role ?? ""]}</span>
-        </span>
-        <LogoutButton />
-      </section>
     </div>
   );
 }

@@ -1,11 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSync } from "./sync-provider";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { clearLocalData } from "@/lib/offline/db";
 import { canEdit, canView, type Modules } from "@/lib/modules";
+import { ThemeToggle } from "./theme-toggle";
 
 // Navegación con <a> (carga completa) a propósito: así funciona también
 // sin señal, servida por el service worker.
@@ -41,6 +42,28 @@ const icons = {
       <circle cx="5" cy="18" r="1.2" />
     </>
   ),
+  team: (
+    <>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3 20a6 6 0 0 1 12 0" />
+      <circle cx="17" cy="9" r="2.5" />
+      <path d="M15.5 14.2A5 5 0 0 1 21 19" />
+    </>
+  ),
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.5" />
+      <circle cx="12" cy="12" r="1.5" />
+      <circle cx="19" cy="12" r="1.5" />
+    </>
+  ),
+  close: <path d="M6 6l12 12M18 6 6 18" />,
+  guide: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17h.01" />
+    </>
+  ),
   wellness: (
     <path d="M12 20s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 10c0 5.65-7 10-7 10z" />
   ),
@@ -54,27 +77,52 @@ function Icon({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function navItems(canLoad: boolean, isAdmin = false, modules?: Modules): NavItem[] {
+interface NavOptions {
+  canLoad: boolean;
+  isAdmin?: boolean;
+  isStaff?: boolean;
+  modules?: Modules;
+}
+
+/** Secciones del menú. Las «primary» van en la barra de abajo del celular; el resto, en «Más». */
+export function navItems({ canLoad, isAdmin = false, isStaff = true, modules }: NavOptions): (NavItem & { primary: boolean })[] {
   const view = (m: Parameters<typeof canView>[1]) => !modules || canView(modules, m);
-  return [
-    { href: "/", label: "Inicio", icon: <Icon>{icons.home}</Icon> },
-    ...(canLoad && (!modules || canEdit(modules, "performance")) ? [{ href: "/cargar", label: "Cargar", icon: <Icon>{icons.load}</Icon> }] : []),
-    ...(view("wellness") ? [{ href: "/bienestar", label: "Bienestar", icon: <Icon>{icons.wellness}</Icon> }] : []),
-    ...(canLoad && (view("attendance") || view("objectives")) ? [{ href: "/practica", label: "Práctica", icon: <Icon>{icons.objectives}</Icon> }] : []),
-    ...(view("injuries") ? [{ href: "/lesiones", label: "Lesiones", icon: <Icon>{icons.injuries}</Icon> }] : []),
-    ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: <Icon>{icons.admin}</Icon> }] : []),
+  const items: (NavItem & { primary: boolean; show: boolean })[] = [
+    { href: "/", label: "Inicio", icon: <Icon>{icons.home}</Icon>, primary: true, show: true },
+    { href: "/plantel", label: "Plantel", icon: <Icon>{icons.team}</Icon>, primary: true, show: isStaff },
+    {
+      href: "/practica",
+      label: "Práctica",
+      icon: <Icon>{icons.objectives}</Icon>,
+      primary: true,
+      show: canLoad && (view("attendance") || view("objectives")),
+    },
+    {
+      href: "/cargar",
+      label: "Evaluaciones",
+      icon: <Icon>{icons.load}</Icon>,
+      primary: true,
+      show: canLoad && (!modules || canEdit(modules, "performance")),
+    },
+    { href: "/bienestar", label: "Bienestar", icon: <Icon>{icons.wellness}</Icon>, primary: false, show: view("wellness") },
+    { href: "/lesiones", label: "Lesiones", icon: <Icon>{icons.injuries}</Icon>, primary: false, show: view("injuries") },
+    { href: "/admin", label: "Admin", icon: <Icon>{icons.admin}</Icon>, primary: false, show: isAdmin },
   ];
+  return items.filter((i) => i.show).map(({ show: _show, ...i }) => i);
 }
 
 function isActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+  if (href === "/") return pathname === "/";
+  // La categoría y el perfil del jugador son parte del Plantel.
+  if (href === "/plantel") return pathname.startsWith("/plantel") || pathname.startsWith("/categorias") || pathname.startsWith("/jugadores");
+  return pathname.startsWith(href);
 }
 
-export function TopNav({ canLoad, isAdmin = false, modules }: { canLoad: boolean; isAdmin?: boolean; modules?: Modules }) {
+export function TopNav(props: NavOptions) {
   const pathname = usePathname();
   return (
     <nav className="hidden items-center gap-1 md:flex" aria-label="Principal">
-      {navItems(canLoad, isAdmin, modules).map((i) => (
+      {navItems(props).map((i) => (
         <a
           key={i.href}
           href={i.href}
@@ -89,34 +137,83 @@ export function TopNav({ canLoad, isAdmin = false, modules }: { canLoad: boolean
   );
 }
 
-export function BottomNav({ canLoad, isAdmin = false, modules }: { canLoad: boolean; isAdmin?: boolean; modules?: Modules }) {
+/** Barra de abajo (celular): hasta 4 secciones principales + «Más». */
+export function BottomNav(props: NavOptions) {
   const pathname = usePathname();
-  const items = navItems(canLoad, isAdmin, modules);
+  const [open, setOpen] = useState(false);
+  const all = navItems(props);
+  const primary = all.filter((i) => i.primary);
+  const more = [...all.filter((i) => !i.primary), { href: "/guia", label: "Guía: qué medimos", icon: <Icon>{icons.guide}</Icon>, primary: false }];
+  const moreActive = more.some((i) => isActive(pathname, i.href));
+  const cols = primary.length + 1;
+
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-orc-black pb-[env(safe-area-inset-bottom)] md:hidden"
-      aria-label="Principal"
-    >
-      <ul className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
-        {items.map((i) => {
-          const active = isActive(pathname, i.href);
-          return (
-            <li key={i.href}>
-              <a
-                href={i.href}
-                className={`flex flex-col items-center gap-0.5 py-2 text-xs font-semibold ${
-                  active ? "text-orc-orange" : "text-white/70"
-                }`}
-                aria-current={active ? "page" : undefined}
-              >
-                {i.icon}
-                {i.label}
-              </a>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <>
+      {open && (
+        <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setOpen(false)} aria-hidden />
+      )}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-orc-black pb-[env(safe-area-inset-bottom)] md:hidden"
+        aria-label="Principal"
+      >
+        {open && (
+          <div id="nav-mas" className="border-b border-white/10 px-2 pb-2 pt-3" role="menu" aria-label="Más secciones">
+            <ul className="grid grid-cols-2 gap-1">
+              {more.map((i) => {
+                const active = isActive(pathname, i.href);
+                return (
+                  <li key={i.href}>
+                    <a
+                      href={i.href}
+                      role="menuitem"
+                      className={`flex items-center gap-2 rounded-lg px-3 py-3 text-sm font-semibold ${
+                        active ? "bg-orc-orange text-orc-black" : "text-white/85 hover:bg-white/10"
+                      }`}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      {i.icon}
+                      {i.label}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="mt-1 border-t border-white/10 px-1 pt-1">
+              <LogoutButton className="w-full text-white/85 hover:bg-white/10" />
+            </div>
+          </div>
+        )}
+        <ul className="grid" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+          {primary.map((i) => {
+            const active = isActive(pathname, i.href);
+            return (
+              <li key={i.href}>
+                <a
+                  href={i.href}
+                  className={`flex flex-col items-center gap-0.5 py-2 text-xs font-semibold ${active ? "text-orc-orange" : "text-white/70"}`}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {i.icon}
+                  {i.label}
+                </a>
+              </li>
+            );
+          })}
+          <li>
+            <button
+              type="button"
+              onClick={() => setOpen((o) => !o)}
+              aria-expanded={open}
+              aria-controls="nav-mas"
+              className={`flex w-full flex-col items-center gap-0.5 py-2 text-xs font-semibold ${open || moreActive ? "text-orc-orange" : "text-white/70"}`}
+            >
+              <Icon>{open ? icons.close : icons.more}</Icon>
+              Más
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </>
   );
 }
 
@@ -153,7 +250,7 @@ export function SyncBadge() {
 }
 
 /** Cerrar sesión: avisa si hay datos sin subir y limpia el dispositivo. */
-export function LogoutButton() {
+export function LogoutButton({ className = "" }: { className?: string }) {
   const { pending, errors } = useSync();
   async function logout() {
     const unsynced = pending + errors;
@@ -176,11 +273,19 @@ export function LogoutButton() {
     window.location.href = "/login";
   }
   return (
-    <button type="button" onClick={logout} className="text-sm font-medium text-white/70 hover:text-white">
-      Salir
+    <button
+      type="button"
+      onClick={() => void logout()}
+      className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold ${className || "text-white/85 hover:bg-white/10"}`}
+    >
+      <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4" />
+      </svg>
+      Cerrar sesión
     </button>
   );
 }
+
 
 const PRECACHE_KEY = "orc-precache-field-pages";
 
@@ -217,4 +322,54 @@ export function PrecacheFieldPages() {
     };
   }, []);
   return null;
+}
+
+/** Menú de cuenta (arriba a la derecha): nombre, rol, tema y cerrar sesión. */
+export function AccountMenu({ name, role }: { name: string; role: string }) {
+  const [open, setOpen] = useState(false);
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("");
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-controls="menu-cuenta"
+        aria-label={`Cuenta de ${name}`}
+        className={`grid size-9 place-items-center rounded-full border-2 text-sm font-black ${open ? "border-orc-orange bg-orc-orange text-orc-black" : "border-orc-orange/70 text-white"}`}
+      >
+        {initials || "?"}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
+          <div
+            id="menu-cuenta"
+            className="absolute right-0 top-11 z-50 w-64 rounded-xl border border-white/10 bg-orc-black p-3 text-white shadow-xl"
+          >
+            <p className="font-bold">{name}</p>
+            <p className="text-sm text-white/60">{role}</p>
+            <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
+              <span className="text-sm text-white/70">Tema</span>
+              <ThemeToggle />
+            </div>
+            <div className="mt-3 border-t border-white/10 pt-2">
+              <LogoutButton className="w-full text-white hover:bg-white/10" />
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }

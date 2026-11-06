@@ -175,3 +175,13 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
 * Permiso: módulo **Pase de temporada**, apagado por defecto (sólo admin). El admin lo puede habilitar a un **profe**
   (sólo pasa jugadores de sus categorías); al área médica no.
 * Después: asignar las categorías de los profes para la temporada nueva (Usuarios) y recién ahí marcarla como actual.
+
+### Navegación
+
+* Menú: **Inicio · Plantel · Práctica · Evaluaciones** (+ Bienestar, Lesiones y Admin). En el celular la barra de abajo
+  muestra las cuatro primeras y **Más** (Bienestar, Lesiones, Guía, Cerrar sesión).
+* **Plantel** (`/plantel`): todos los jugadores de las categorías del usuario, con buscador (nombre o camiseta, sin
+  importar acentos), categoría, forwards/backs, lesionados y sin consentimiento; acceso a la página de la categoría.
+* **Menú de cuenta** (iniciales, arriba a la derecha): nombre, rol, tema claro/oscuro y **Cerrar sesión**.
+* Nombres: "Cargar" → **Evaluaciones**; "Pase de categoría / Ficha de pase" → **Evaluación de pase**;
+  "Pase de temporada" → **Armar temporada** (las URLs no cambian).

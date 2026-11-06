@@ -218,7 +218,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
           {can.share && <ShareReportButton playerId={id} data={report} blockedReason={shareBlocked} />}
           {psc?.category && can.promo && (
             <a href={`/jugadores/${id}/pase`} className="btn-ghost h-10 border-white/30 text-white">
-              Ficha de pase →
+              Evaluación de pase →
             </a>
           )}
         </div>

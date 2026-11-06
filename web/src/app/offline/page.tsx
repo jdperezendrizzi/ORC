@@ -12,7 +12,7 @@ export default function OfflinePage() {
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <a href="/cargar" className="btn-primary">
-          Cargar datos
+          Evaluaciones
         </a>
         <a href="/bienestar" className="btn-ghost">
           Bienestar

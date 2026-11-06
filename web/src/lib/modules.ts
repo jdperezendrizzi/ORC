@@ -22,13 +22,13 @@ export const MODULES: { id: AppModule; label: string; help: string }[] = [
   { id: "attendance", label: "Asistencia", help: "Tomar asistencia y ver porcentajes." },
   { id: "objectives", label: "Objetivos", help: "Checklist de objetivos de la categoría." },
   { id: "injuries", label: "Lesiones", help: "Lista y registro de lesiones (las notas clínicas siguen siendo del área médica)." },
-  { id: "promotion", label: "Pase de categoría", help: "Ficha de pase y recomendación (la decisión es del admin)." },
+  { id: "promotion", label: "Evaluación de pase", help: "Ficha de cada jugador y recomendación de si sube (la decisión es del admin)." },
   { id: "insights", label: "Resumen y alertas", help: "Alertas y resumen semanal; «Carga» permite generarlo." },
   { id: "sharing", label: "Compartir", help: "PDF del jugador y Excel de la categoría." },
   {
     id: "season_rollover",
-    label: "Pase de temporada",
-    help: "Aplicar los pases de sus categorías a la temporada siguiente. Apagado por defecto: lo habilita el admin (sólo a profes).",
+    label: "Armar temporada",
+    help: "Pasar a los jugadores de sus categorías a la temporada siguiente. Apagado por defecto: lo habilita el admin (sólo a profes).",
   },
 ];
 

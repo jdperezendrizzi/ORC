@@ -129,8 +129,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
     <div className="space-y-6">
       <header className="flex items-end justify-between gap-3">
         <div>
-          <a href="/" className="text-sm text-orc-muted">
-            ← Inicio
+          <a href={`/plantel?cat=${category.id}`} className="text-sm text-orc-muted">
+            ← Plantel
           </a>
           <h1 className="text-2xl font-black">{category.name}</h1>
           <p className="text-sm text-orc-muted">
@@ -140,7 +140,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
         <div className="flex flex-wrap items-start justify-end gap-2">
           {isStaff(profile) && can.promo && (
             <a href={`/categorias/${category.id}/pase`} className="btn-ghost">
-              Pase de categoría
+              Evaluación de pase
             </a>
           )}
           {can.share && <ExportCategoryButton categoryId={category.id} />}

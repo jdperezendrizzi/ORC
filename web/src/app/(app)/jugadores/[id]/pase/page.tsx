@@ -9,7 +9,7 @@ import { formatDate } from "@/lib/labels";
 import { formatValue } from "@/lib/validation";
 import { saveDecision, saveRecommendation } from "./actions";
 
-export const metadata: Metadata = { title: "Ficha de pase" };
+export const metadata: Metadata = { title: "Evaluación de pase" };
 export const dynamic = "force-dynamic";
 
 const OUTCOMES: Outcome[] = ["promote", "observe", "stay"];
@@ -41,7 +41,7 @@ export default async function PromotionSheetPage({
         ← Perfil
       </a>
       <header className="space-y-2">
-        <p className="text-sm text-orc-muted">Ficha de pase · temporada {season.name}</p>
+        <p className="text-sm text-orc-muted">Evaluación de pase · temporada {season.name}</p>
         <h1 className="text-2xl font-black">
           {s.player.last_name}, {s.player.first_name}
         </h1>

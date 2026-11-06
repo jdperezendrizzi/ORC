@@ -7,7 +7,7 @@ import { getViewer, getViewerCategories } from "@/lib/server-data";
 import type { Category } from "@/lib/types";
 import { RolloverTable, type RolloverRow } from "./rollover-table";
 
-export const metadata: Metadata = { title: "Pase de temporada" };
+export const metadata: Metadata = { title: "Armar temporada" };
 export const dynamic = "force-dynamic";
 
 export default async function SeasonRolloverPage({ searchParams }: { searchParams: Promise<{ categoria?: string; destino?: string }> }) {
@@ -31,9 +31,9 @@ export default async function SeasonRolloverPage({ searchParams }: { searchParam
   const header = (
     <header className="space-y-1">
       <p className="text-sm text-orc-muted">Temporada actual: {season.name}</p>
-      <h1 className="text-2xl font-black">Pase de temporada</h1>
+      <h1 className="text-2xl font-black">Armar temporada</h1>
       <p className="text-sm text-orc-muted">
-        Pasa a los jugadores de una categoría a la temporada siguiente, todos juntos. La propuesta sale de la decisión de la ficha
+        Pasa a los jugadores de una categoría a la temporada siguiente, todos juntos. La propuesta sale de la decisión de la evaluación
         de pase; si no hay decisión (o está en observación), de la categoría que le toca por edad. Revisá y cambiá lo que haga falta
         antes de aplicar.
       </p>

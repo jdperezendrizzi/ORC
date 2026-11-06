@@ -52,7 +52,7 @@ export default async function AdminSeasons() {
         <div>
           <h2 className="text-lg font-bold">Nueva temporada</h2>
           <p className="text-sm text-orc-muted">
-            Al terminar el año: 1) creá la temporada nueva; 2) <a href="/pase-de-temporada" className="font-semibold text-orc-orange-strong">Aplicar pases</a>{" "}
+            Al terminar el año: 1) creá la temporada nueva; 2) <a href="/pase-de-temporada" className="font-semibold text-orc-orange-strong">Armar temporada</a>{" "}
             para pasar a cada categoría de una vez; 3) asigná a cada profe sus categorías (en Usuarios); 4) recién ahí marcala como
             actual.
           </p>
