@@ -70,7 +70,7 @@ export default async function PromotionSheetPage({
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Resumen">
         <Stat label="Asistencia" value={s.attendance.pct === null ? "—" : `${s.attendance.pct}%`} sub={`${s.attendance.present} pres. · ${s.attendance.absent} aus. · ${s.attendance.excused} just.`} />
-        <Stat label="Objetivos de la categoría" value={s.objectives ? `${s.objectives.done}/${s.objectives.total}` : "—"} sub={s.objectives ? "logrados por el equipo" : "sin objetivos cargados"} />
+        <Stat label={s.objectives?.kind === "player" ? "Objetivos del jugador" : "Objetivos de la categoría"} value={s.objectives ? `${s.objectives.done}/${s.objectives.total}` : "—"} sub={s.objectives ? (s.objectives.kind === "player" ? "logrados" : "logrados por el equipo") : "sin objetivos cargados"} />
         <Stat label={`Tests vs. ${s.target?.name ?? "—"}`} value={tests.total ? `${tests.above}/${tests.total}` : "—"} sub="en la mediana o mejor" />
         <Stat
           label="Disponibilidad"

@@ -5,7 +5,7 @@ import { loadCatalog, requireAdmin } from "@/lib/admin";
 import { AREA_ORDER, objectiveAreaLabel } from "@/lib/objectives";
 import type { Objective } from "@/lib/types";
 import { Field } from "../jugadores/player-fields";
-import { copyObjectives, createObjective, setObjectiveActive, updateObjective } from "./actions";
+import { copyObjectives, createObjective, setObjectiveActive, setPlayerObjectivesFrom, updateObjective } from "./actions";
 
 export const metadata: Metadata = { title: "Objetivos" };
 export const dynamic = "force-dynamic";
@@ -20,6 +20,9 @@ export default async function AdminObjectives({ searchParams }: { searchParams: 
     .select("id, category_id, scope, area, title, look_for, exercise_name, exercise_description, exercise_url, sort_order, active")
     .order("sort_order");
   const objectives = (all ?? []) as Row[];
+  const { data: setting } = await supabase.from("club_settings").select("value").eq("key", "player_objectives_from").maybeSingle();
+  const fromId = ((setting?.value as { category_id?: string } | null)?.category_id ?? "") as string;
+  const fromCat = categories.find((c) => c.id === fromId);
   const count = (cid: string) => objectives.filter((o) => o.category_id === cid && o.active).length;
 
   const { categoria } = await searchParams;
@@ -68,6 +71,32 @@ export default async function AdminObjectives({ searchParams }: { searchParams: 
         </form>
       </section>
 
+      <section className="card space-y-3" aria-label="Objetivos por jugador">
+        <div>
+          <h2 className="text-lg font-bold">Objetivos por jugador</h2>
+          <p className="text-sm text-orc-muted">
+            Desde esta categoría en adelante, los objetivos se evalúan <b>por jugador</b> (el profe marca a cada uno). En las
+            anteriores son <b>del equipo</b>. Ahora: {fromCat ? `desde ${fromCat.name}` : "todos del equipo"}.
+          </p>
+        </div>
+        <ActionForm action={setPlayerObjectivesFrom} submitLabel="Guardar" submitClassName="btn-ghost h-11">
+          <Field label="Objetivos por jugador desde" id="po_from">
+            <select id="po_from" name="category_id" defaultValue={fromId} className="field-input sm:max-w-xs">
+              <option value="">Ninguna (todos del equipo)</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <p className="text-xs text-orc-muted">
+            Al cambiarlo, los objetivos de las categorías afectadas cambian de tipo; los que ya tienen marcas del otro tipo se
+            dejan como están para no perder historial.
+          </p>
+        </ActionForm>
+      </section>
+
       <section className="space-y-2">
         <h2 className="text-sm font-bold uppercase tracking-wide text-orc-muted">
           {category.name} · {list.filter((o) => o.active).length} vigentes
@@ -90,7 +119,10 @@ export default async function AdminObjectives({ searchParams }: { searchParams: 
                       {st ? ` · ${st.achieved ? "Logrado" : "No logrado"} (última marca ${st.date.split("-").reverse().join("/")})` : " · Sin marcas"}
                     </p>
                   </div>
-                  {o.active ? <span className="chip tone-green text-xs">Vigente</span> : <span className="chip text-xs">Desactivado</span>}
+                  <span className="flex flex-wrap gap-1">
+                    <span className="chip text-xs">{o.scope === "player" ? "Por jugador" : "Del equipo"}</span>
+                    {o.active ? <span className="chip tone-green text-xs">Vigente</span> : <span className="chip text-xs">Desactivado</span>}
+                  </span>
                 </div>
                 <Collapsible summary="Editar" className="text-sm">
                   <div className="mt-3 space-y-3">

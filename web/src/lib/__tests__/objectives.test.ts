@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeChecks, objectiveState, progress } from "../objectives";
+import { mergeChecks, objectiveState, playerProgress, progress } from "../objectives";
 import type { Objective, ObjectiveCheck } from "../types";
 
 const o = (id: string, scope: "team" | "player" = "team"): Objective => ({
@@ -34,5 +34,17 @@ describe("checklist de objetivos", () => {
     const merged = mergeChecks(checks, [c("b", "2026-05-15", true)]);
     expect(merged).toHaveLength(checks.length);
     expect(objectiveState(merged, "b", "2026-05-20").achieved).toBe(true);
+  });
+
+  it("avance por jugador (objetivos por jugador)", () => {
+    const pc = (objective_id: string, player_id: string, check_date: string, achieved: boolean): ObjectiveCheck => ({
+      id: `${objective_id}-${player_id}-${check_date}`, objective_id, season_id: "s", check_date, player_id, achieved, note: null,
+    });
+    const objs = [o("x", "player"), o("y", "player"), o("t")];
+    const ch = [pc("x", "p1", "2026-05-01", true), pc("y", "p1", "2026-05-01", true), pc("y", "p1", "2026-05-08", false), pc("x", "p2", "2026-05-01", true)];
+    expect(playerProgress(objs, ch, "p1", "2026-05-20")).toEqual({ done: 1, total: 2 });
+    expect(playerProgress(objs, ch, "p2", "2026-05-20")).toEqual({ done: 1, total: 2 });
+    expect(objectiveState(ch, "x", "2026-05-20", "p1").achieved).toBe(true);
+    expect(objectiveState(ch, "x", "2026-05-20", null).achieved).toBe(false); // las del equipo no se mezclan
   });
 });

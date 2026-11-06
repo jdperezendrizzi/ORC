@@ -70,6 +70,7 @@ export default async function CategoryPromotionPage({
             <tr>
               <th className="px-3 py-2">Jugador</th>
               <th className="px-3 py-2 text-right">Asist.</th>
+              {rows.some((r) => r.objectives) && <th className="px-3 py-2 text-right">Objetivos</th>}
               <th className="px-3 py-2 text-right" title={`Tests en la mediana de ${target?.name ?? "la categoría siguiente"} o mejor`}>
                 Tests ≥ mediana
               </th>
@@ -86,6 +87,9 @@ export default async function CategoryPromotionPage({
                   </a>
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">{r.attendancePct === null ? "—" : `${r.attendancePct}%`}</td>
+                {rows.some((x) => x.objectives) && (
+                  <td className="px-3 py-2 text-right tabular-nums">{r.objectives ? `${r.objectives.done}/${r.objectives.total}` : "—"}</td>
+                )}
                 <td className="px-3 py-2 text-right tabular-nums">{r.tests.total ? `${r.tests.above}/${r.tests.total}` : "—"}</td>
                 <td className="px-3 py-2">{r.recommendation ? <span className={`chip ${outcomeTone[r.recommendation]}`}>{outcomeLabel[r.recommendation]}</span> : <span className="text-orc-muted">—</span>}</td>
                 <td className="px-3 py-2">{r.decision ? <span className={`chip ${outcomeTone[r.decision]}`}>{outcomeLabel[r.decision]}</span> : <span className="text-orc-muted">Pendiente</span>}</td>

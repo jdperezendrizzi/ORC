@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { fetchAll } from "@/lib/fetch-all";
 import { ratesByPlayer, type AttendanceRow } from "@/lib/attendance";
 import { canView } from "@/lib/modules";
+import { playerProgress } from "@/lib/objectives";
+import type { Objective, ObjectiveCheck } from "@/lib/types";
+import { clubToday } from "@/lib/validation";
 import { getViewer, getViewerCategories, isStaff } from "@/lib/server-data";
 import { ageOn } from "@/lib/validation";
 import { RosterBrowser, type RosterRow } from "./roster-browser";
@@ -19,9 +22,10 @@ export default async function PlantelPage() {
   const ids = categories.map((c) => c.id);
   const seeAtt = canView(modules, "attendance");
   const seeInj = canView(modules, "injuries");
+  const seeObj = canView(modules, "objectives");
   const none = ["00000000-0000-0000-0000-000000000000"];
 
-  const [roster, positionsRes, consentsRes, injuriesRes, attendance] = await Promise.all([
+  const [roster, positionsRes, consentsRes, injuriesRes, attendance, objRes, objChecks] = await Promise.all([
     fetchAll<{
       category_id: string;
       position_id: number | null;
@@ -52,7 +56,27 @@ export default async function PlantelPage() {
               .order("id") as never,
         )
       : Promise.resolve([] as AttendanceRow[]),
+    seeObj
+      ? supabase
+          .from("objectives")
+          .select("id, category_id, scope, area, title, sort_order")
+          .eq("scope", "player")
+          .eq("active", true)
+          .in("category_id", ids.length ? ids : none)
+      : Promise.resolve({ data: [] as Objective[] }),
+    seeObj
+      ? fetchAll<ObjectiveCheck>(
+          () =>
+            supabase
+              .from("objective_checks")
+              .select("id, objective_id, season_id, check_date, player_id, achieved, note")
+              .eq("season_id", season.id)
+              .order("id") as never,
+        )
+      : Promise.resolve([] as ObjectiveCheck[]),
   ]);
+  const pObjs = (objRes.data ?? []) as Objective[];
+  const today = clubToday();
 
   const positions = new Map((positionsRes.data ?? []).map((p) => [p.id as number, { short: p.short_name as string, unit: p.unit as string }]));
   const perf = new Set((consentsRes.data ?? []).filter((c) => c.consent_type === "performance_data").map((c) => c.player_id as string));
@@ -77,6 +101,10 @@ export default async function PlantelPage() {
         attendancePct: rates.get(r.player.id)?.pct ?? null,
         injury: injured.get(r.player.id) ?? null,
         noConsent: !perf.has(r.player.id),
+        objectives: (() => {
+          const mine = pObjs.filter((o) => o.category_id === r.category_id);
+          return mine.length ? playerProgress(mine, objChecks, r.player.id, today) : null;
+        })(),
       };
     });
 

@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { objectiveAreaLabel, objectiveState, playerProgress } from "@/lib/objectives";
+import type { Objective, ObjectiveCheck } from "@/lib/types";
 import { canEdit, canView } from "@/lib/modules";
 import { ABSENCE_STREAK, absenceStreak, attendanceKindLabel, attendancePct, countByStatus, type AttendanceRow } from "@/lib/attendance";
 import { PlayerEvolution, ZBar, type MetricSeries } from "@/components/player-charts";
@@ -38,7 +40,7 @@ const consentLabel: Record<string, string> = {
 export default async function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { supabase, season, profile, modules } = await getViewer();
-  const can = { perf: canView(modules, "performance"), well: canView(modules, "wellness"), att: canView(modules, "attendance"), inj: canView(modules, "injuries"), injEdit: canEdit(modules, "injuries"), share: canEdit(modules, "sharing"), promo: canView(modules, "promotion") };
+  const can = { perf: canView(modules, "performance"), well: canView(modules, "wellness"), att: canView(modules, "attendance"), inj: canView(modules, "injuries"), injEdit: canEdit(modules, "injuries"), share: canEdit(modules, "sharing"), promo: canView(modules, "promotion"), objectives: canView(modules, "objectives") };
 
   const { data: player } = await supabase
     .from("players")
@@ -143,6 +145,29 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   const attPct = attendancePct(attendance);
   const streak = absenceStreak(attendance);
   const lastAbsences = attendance.filter((a) => a.status !== "present").slice(0, 5);
+
+  // Objetivos por jugador (desde la categoría que configura el admin)
+  const objCatId = psc?.category?.id;
+  const [{ data: pObjs }, { data: pChecks }] =
+    can.objectives && objCatId && season
+      ? await Promise.all([
+          supabase
+            .from("objectives")
+            .select("id, category_id, scope, area, title, look_for, exercise_name, exercise_description, exercise_url, sort_order")
+            .eq("category_id", objCatId)
+            .eq("scope", "player")
+            .eq("active", true)
+            .order("sort_order"),
+          supabase
+            .from("objective_checks")
+            .select("id, objective_id, season_id, check_date, player_id, achieved, note")
+            .eq("player_id", id)
+            .eq("season_id", season.id),
+        ])
+      : [{ data: [] }, { data: [] }];
+  const playerObjectives = (pObjs ?? []) as Objective[];
+  const playerChecks = (pChecks ?? []) as ObjectiveCheck[];
+  const objToday = clubToday();
 
   const byDomain = new Map<string, MetricSeries[]>();
   for (const s of series.filter((s) => s.series.length > 0)) {
@@ -396,6 +421,38 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
           </>
         )}
       </section>
+      )}
+
+      {/* Objetivos del jugador */}
+      {can.objectives && playerObjectives.length > 0 && (
+        <section className="card space-y-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-bold">Objetivos del jugador</h2>
+            <span className="text-sm">
+              <b className="text-lg tabular-nums">{playerProgress(playerObjectives, playerChecks, id, objToday).done}</b> de {playerObjectives.length} logrados
+            </span>
+          </div>
+          <ul className="divide-y divide-orc-line">
+            {playerObjectives.map((o) => {
+              const st = objectiveState(playerChecks, o.id, objToday, id);
+              return (
+                <li key={o.id} className="flex items-start justify-between gap-3 py-2 text-sm">
+                  <span>
+                    <span className="font-semibold">{o.title}</span>
+                    <span className="block text-xs text-orc-muted">{objectiveAreaLabel[o.area]}</span>
+                  </span>
+                  {st.achieved ? (
+                    <span className="chip tone-green shrink-0 text-xs">Logrado {st.firstAchieved ? formatDate(st.firstAchieved) : ""}</span>
+                  ) : st.lastDate ? (
+                    <span className="chip tone-amber shrink-0 text-xs">No logrado ({formatDate(st.lastDate)})</span>
+                  ) : (
+                    <span className="chip shrink-0 text-xs">Pendiente</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
 
       {/* Lesiones */}

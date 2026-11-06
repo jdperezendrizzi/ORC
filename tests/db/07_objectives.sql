@@ -86,7 +86,7 @@ select ob_t.eq((select count(*) from objectives), 0, 'el área médica no ve obj
 
 -- Admin: crea un objetivo por jugador; exige consentimiento de rendimiento
 select set_config('request.jwt.claim.sub', 'c0000000-0000-4000-8000-0000000e0003', true);
-insert into objectives (id, category_id, scope, title) values ('0b000000-0000-4000-8000-0000000e0001', (select m7 from ids), 'player', 'Pasa con las dos manos');
+insert into objectives (id, category_id, scope, title) values ('0b000000-0000-4000-8000-0000000e0001', (select id from categories where code = 'M17'), 'player', 'Pasa con las dos manos');
 insert into objective_checks (id, objective_id, season_id, check_date, player_id, achieved)
 values (gen_random_uuid(), '0b000000-0000-4000-8000-0000000e0001', '5e000000-0000-4000-8000-0000000e2026', '2026-05-01', 'b1000000-0000-4000-8000-0000000e0001', true);
 select ob_t.throws($$insert into objective_checks (id, objective_id, season_id, check_date, player_id, achieved)

@@ -16,6 +16,7 @@ export interface RosterRow {
   attendancePct: number | null;
   injury: string | null;
   noConsent: boolean;
+  objectives: { done: number; total: number } | null;
 }
 
 const norm = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
@@ -145,6 +146,7 @@ export function RosterBrowser({
                     {!cat && `${r.categoryCode} · `}
                     {r.position ?? "Sin puesto"} · {r.age} años
                     {showAttendance && r.attendancePct !== null && ` · asistencia ${r.attendancePct}%`}
+                    {r.objectives && ` · objetivos ${r.objectives.done}/${r.objectives.total}`}
                   </span>
                 </span>
                 <span className="flex shrink-0 flex-wrap justify-end gap-1">

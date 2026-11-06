@@ -126,6 +126,10 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
   los usa. Los objetivos del equipo no son datos personales (no piden consentimiento). Los objetivos **por jugador**
   (`scope = 'player'`, para más adelante) exigen el consentimiento de datos de rendimiento.
 * Categorías agregadas: M6 a M11 y M13.
+* **Objetivos por jugador** desde una categoría configurable (Admin → Objetivos → "Objetivos por jugador desde",
+  por defecto **M13**; ajuste en `club_settings`). Debajo, del equipo; desde ahí, el profe marca a cada jugador
+  (Logrado / No; sin marcar = no observado; "Todos logrados"), también sin señal. Se ven en el perfil del jugador,
+  la Evaluación de pase y el Plantel. Al cambiar el corte, los objetivos con marcas del otro tipo no se convierten.
 
 ### Asistencia (todas las categorías)
 

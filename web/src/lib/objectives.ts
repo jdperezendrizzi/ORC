@@ -49,3 +49,9 @@ export function mergeChecks(base: ObjectiveCheck[], local: ObjectiveCheck[]): Ob
   for (const c of local) byId.set(c.id, c);
   return [...byId.values()];
 }
+
+/** Objetivos por jugador logrados por un jugador (según su última marca) sobre el total. */
+export function playerProgress(objectives: Objective[], checks: ObjectiveCheck[], playerId: string, date: string): { done: number; total: number } {
+  const mine = objectives.filter((o) => o.scope === "player");
+  return { done: mine.filter((o) => objectiveState(checks, o.id, date, playerId).achieved).length, total: mine.length };
+}

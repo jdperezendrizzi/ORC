@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { TRACKED_METRICS } from "./alerts";
 import { attendancePct, countByStatus, type AttendanceRow } from "./attendance";
 import { fetchAll } from "./fetch-all";
-import { progress } from "./objectives";
+import { playerProgress, progress } from "./objectives";
 import { aboveMedianCount, nextCategory, seasonImprovement, standing, type Benchmark, type Outcome, type Standing } from "./promotion";
 import type { Category, Objective, ObjectiveCheck, Season } from "./types";
 import { clubToday } from "./validation";
@@ -121,7 +121,7 @@ export interface PlayerSheet {
   targetOptions: Category[];
   hasPerfConsent: boolean;
   attendance: { pct: number | null; present: number; absent: number; excused: number };
-  objectives: { done: number; total: number } | null;
+  objectives: { done: number; total: number; kind: "player" | "team" } | null;
   injuries: { count: number; daysOut: number; active: boolean };
   metrics: SheetMetric[];
   review: Review | null;
@@ -215,7 +215,11 @@ export async function loadPlayerSheet(
     targetOptions,
     hasPerfConsent: (consentRes.data ?? []).length > 0,
     attendance: { pct: attendancePct(att), ...countByStatus(att) },
-    objectives: objectives.length ? progress(objectives, checks, today) : null,
+    objectives: objectives.some((o) => o.scope === "player")
+      ? { ...playerProgress(objectives, checks, playerId, today), kind: "player" as const }
+      : objectives.length
+        ? { ...progress(objectives, checks, today), kind: "team" as const }
+        : null,
     injuries: { count: injuries.length, daysOut, active: injuries.some((i) => i.status !== "closed") },
     metrics: metrics
       .map((m) =>
@@ -235,6 +239,7 @@ export interface CategorySheetRow {
   playerId: string;
   name: string;
   attendancePct: number | null;
+  objectives: { done: number; total: number } | null;
   tests: { above: number; total: number };
   recommendation: Outcome | null;
   decision: Outcome | null;
@@ -317,6 +322,7 @@ export async function loadCategorySheet(
         playerId: pid,
         name: `${r.player.last_name}, ${r.player.first_name}`,
         attendancePct: attendancePct(attendance.filter((a) => a.player_id === pid)),
+        objectives: objectives.some((o) => o.scope === "player") ? playerProgress(objectives, checks, pid, today) : null,
         tests: aboveMedianCount(standings),
         recommendation: (rev?.recommendation as Outcome) ?? null,
         decision: (rev?.decision as Outcome) ?? null,

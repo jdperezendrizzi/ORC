@@ -42,7 +42,8 @@ export async function createObjective(_: ActionResult, f: FormData): Promise<Act
   const categoryId = str(f, "category_id");
   const parsed = fields(f);
   if ("error" in parsed) return parsed;
-  const { error } = await supabase.from("objectives").insert({ ...parsed.row, category_id: categoryId, scope: "team" });
+  // El tipo (del equipo / por jugador) lo define la base según el ajuste del club.
+  const { error } = await supabase.from("objectives").insert({ ...parsed.row, category_id: categoryId });
   if (error) return { error: error.message };
   return done(categoryId, "Objetivo agregado.");
 }
@@ -84,4 +85,20 @@ export async function copyObjectives(_: ActionResult, f: FormData): Promise<Acti
   const ins = await supabase.from("objectives").insert(rows);
   if (ins.error) return { error: ins.error.message };
   return done(to, `Se copiaron ${rows.length} objetivos. Revisalos y ajustalos a esta categoría.`);
+}
+
+/** Desde qué categoría los objetivos son por jugador (convierte los afectados). */
+export async function setPlayerObjectivesFrom(_: ActionResult, f: FormData): Promise<ActionResult> {
+  const { supabase } = await requireAdmin();
+  const categoryId = str(f, "category_id") || null;
+  const { data, error } = await supabase.rpc("set_player_objectives_from", { p_category_id: categoryId });
+  if (error) return { error: error.message };
+  const r = (Array.isArray(data) ? data[0]?.set_player_objectives_from ?? data[0] : data) as { changed?: number; skipped?: string[] } | null;
+  revalidatePath("/admin/objetivos");
+  const skipped = r?.skipped ?? [];
+  return {
+    ok:
+      `Guardado. ${r?.changed ?? 0} objetivos cambiaron de tipo.` +
+      (skipped.length ? ` No se cambiaron (ya tienen marcas): ${skipped.join("; ")}.` : ""),
+  };
 }
