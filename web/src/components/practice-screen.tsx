@@ -13,7 +13,7 @@ import { ObjectivesChecklist } from "./objectives-checklist";
 type Tab = "asistencia" | "objetivos";
 const CAN_USE = ["admin", "coach"];
 
-/** Práctica: asistencia (al empezar) y objetivos (al terminar). Funciona sin señal. */
+/** Asistencia: tomar asistencia (al empezar) y objetivos (al terminar). Funciona sin señal. */
 export function PracticeScreen() {
   const { data, loading } = useFieldData();
   const { online } = useSync();
@@ -53,7 +53,7 @@ export function PracticeScreen() {
     <div className="space-y-4">
       <header className="space-y-3">
         <div>
-          <h1 className="text-2xl font-black">Práctica</h1>
+          <h1 className="text-2xl font-black">Asistencia</h1>
           <p className="text-sm text-orc-muted">
             Al empezar, la asistencia. Al terminar, los objetivos.
             {!online && " Sin señal: se guarda en el celular y se sube sola."}

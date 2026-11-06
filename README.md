@@ -119,7 +119,7 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
 * **Admin → Objetivos**: por categoría, cada objetivo con área (juego, contacto/tackle, actitud), *qué mirar* y un
   ejercicio sugerido (explicación y link opcional a video). Se pueden editar, ordenar, desactivar y copiar de otra
   categoría. Hay un **borrador para M6 y M7** para corregir.
-* **Práctica → Objetivos** (menú del profe y del admin): el checklist de la categoría. Después de la práctica el profe tacha lo
+* **Asistencia → Objetivos** (menú del profe y del admin): el checklist de la categoría. Después de la práctica el profe tacha lo
   que el equipo cumplió (y puede dejar una nota). **Funciona sin señal.** Un objetivo tachado queda logrado hasta que
   se destacha en otra práctica; cada marca queda con fecha, así se ve la evolución en la temporada.
 * Permisos (RLS): el admin carga los objetivos; el profe los ve y tacha sólo en sus categorías; el área médica no
@@ -129,7 +129,7 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
 
 ### Asistencia (todas las categorías)
 
-* **Práctica → Asistencia** (profe y admin; funciona sin señal): categoría, fecha y si es práctica o partido;
+* **Asistencia** (menú; profe y admin; funciona sin señal): categoría, fecha y si es práctica o partido;
   "Todos presentes" y después se marcan los ausentes y justificados. Corregir el mismo día pisa la misma fila.
 * **Asistencia %** = presentes / (presentes + ausentes); los justificados no cuentan. Se ve en el perfil del jugador
   (con las últimas faltas), en la página de la categoría (columna *Asist.*, en rojo debajo de 60 %) y en el resumen
@@ -178,7 +178,7 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
 
 ### Navegación
 
-* Menú: **Inicio · Plantel · Práctica · Evaluaciones** (+ Bienestar, Lesiones y Admin). En el celular la barra de abajo
+* Menú: **Inicio · Plantel · Asistencia · Evaluaciones** (+ Bienestar, Lesiones y Admin). En el celular la barra de abajo
   muestra las cuatro primeras y **Más** (Bienestar, Lesiones, Guía, Cerrar sesión).
 * **Plantel** (`/plantel`): todos los jugadores de las categorías del usuario, con buscador (nombre o camiseta, sin
   importar acentos), categoría, forwards/backs, lesionados y sin consentimiento; acceso a la página de la categoría.
@@ -188,7 +188,7 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
 
 ### Resumen de asistencia
 
-* **Práctica → Asistencia → "Ver resumen del mes y compartir"** (o Categoría → *Resumen de asistencia*), en `/asistencia`:
+* **Asistencia → "Ver resumen del mes y compartir"** (o Categoría → *Resumen de asistencia*), en `/asistencia`:
   categoría, período (este mes, mes anterior, temporada u otro rango) y prácticas/partidos. Muestra asistencia promedio,
   cantidad de prácticas y partidos, barras semana a semana y la tabla por jugador (de menor a mayor; en rojo < 60 %).
 * **Sacarlo de la app**: texto para **WhatsApp**, **Excel** (hojas *Resumen* y *Detalle*) y **PDF** de una página con el

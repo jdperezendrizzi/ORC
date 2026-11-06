@@ -92,7 +92,7 @@ export function navItems({ canLoad, isAdmin = false, isStaff = true, modules }: 
     { href: "/plantel", label: "Plantel", icon: <Icon>{icons.team}</Icon>, primary: true, show: isStaff },
     {
       href: "/practica",
-      label: "Práctica",
+      label: "Asistencia",
       icon: <Icon>{icons.objectives}</Icon>,
       primary: true,
       show: canLoad && (view("attendance") || view("objectives")),

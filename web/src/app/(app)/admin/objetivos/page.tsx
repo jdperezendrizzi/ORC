@@ -47,7 +47,7 @@ export default async function AdminObjectives({ searchParams }: { searchParams: 
         <div>
           <h2 className="text-lg font-bold">Objetivos por categoría</h2>
           <p className="text-sm text-orc-muted">
-            Lo que el equipo tiene que lograr en la temporada. Los profes los ven en <b>Práctica → Objetivos</b> y los tachan después de cada
+            Lo que el equipo tiene que lograr en la temporada. Los profes los ven en <b>Asistencia → Objetivos</b> y los tachan después de cada
             práctica (también sin señal). Cada objetivo puede llevar qué mirar y un ejercicio para trabajarlo.
           </p>
         </div>
