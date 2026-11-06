@@ -25,7 +25,7 @@ const levelTone: Record<ModuleLevel, string> = {
 };
 const levelShort: Record<ModuleLevel, string> = { edit: "C", view: "V", none: "—" };
 const PAGE = 50;
-const FILTERS_KEY = "orc-admin-usuarios-filtros";
+export const FROM_LIST_KEY = "orc-admin-usuarios-desde-lista";
 
 type View = "lista" | "permisos";
 
@@ -49,27 +49,7 @@ export function UsersBrowser({
   const [view, setView] = useState<View>(initial.get("vista") === "permisos" ? "permisos" : "lista");
   const [limit, setLimit] = useState(PAGE);
 
-  // Si se vuelve a la lista sin filtros en la URL (link «← Usuarios»), recuperar los últimos.
-  const [restored, setRestored] = useState(false);
   useEffect(() => {
-    if (initial.toString() === "") {
-      try {
-        const saved = new URLSearchParams(window.sessionStorage.getItem(FILTERS_KEY) ?? "");
-        setQ(saved.get("q") ?? "");
-        setRole(saved.get("rol") ?? "");
-        setStatus(saved.get("estado") ?? "");
-        setCat(saved.get("cat") ?? "");
-        setOnlyRestricted(saved.get("restr") === "1");
-        setView(saved.get("vista") === "permisos" ? "permisos" : "lista");
-      } catch {
-        /* sin storage */
-      }
-    }
-    setRestored(true);
-  }, [initial]);
-
-  useEffect(() => {
-    if (!restored) return;
     const u = new URL(window.location.href);
     const set = (k: string, v: string) => (v ? u.searchParams.set(k, v) : u.searchParams.delete(k));
     set("q", q);
@@ -78,14 +58,10 @@ export function UsersBrowser({
     set("cat", cat);
     set("restr", onlyRestricted ? "1" : "");
     set("vista", view === "permisos" ? "permisos" : "");
-    window.history.replaceState(null, "", u);
-    try {
-      window.sessionStorage.setItem(FILTERS_KEY, u.searchParams.toString());
-    } catch {
-      /* sin storage */
-    }
+    // Conserva el estado de Next en el historial (al volver se recupera la lista tal cual).
+    window.history.replaceState(window.history.state, "", u);
     setLimit(PAGE);
-  }, [q, role, status, cat, onlyRestricted, view, restored]);
+  }, [q, role, status, cat, onlyRestricted, view]);
 
   const catById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
   const norm = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
@@ -104,6 +80,13 @@ export function UsersBrowser({
   const shown = filtered.slice(0, limit);
   const anyFilter = q || role || status || cat || onlyRestricted;
   const href = (id: string) => `/admin/usuarios/${id}`;
+  const markFromList = () => {
+    try {
+      window.sessionStorage.setItem(FROM_LIST_KEY, "1");
+    } catch {
+      /* sin storage */
+    }
+  };
 
   return (
     <section className="space-y-3" aria-label="Usuarios">
@@ -183,7 +166,7 @@ export function UsersBrowser({
         <ul className="card divide-y divide-orc-line p-0">
           {shown.map((u) => (
             <li key={u.id}>
-              <Link href={href(u.id)} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-orc-orange-soft">
+              <Link href={href(u.id)} onClick={markFromList} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-orc-orange-soft">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">
                     {u.name}
@@ -233,7 +216,7 @@ export function UsersBrowser({
               {shown.map((u) => (
                 <tr key={u.id} className="hover:bg-orc-orange-soft">
                   <td className="sticky left-0 bg-orc-surface px-3 py-2">
-                    <Link href={href(u.id)} className="block max-w-[11rem] truncate font-semibold hover:underline">
+                    <Link href={href(u.id)} onClick={markFromList} className="block max-w-[11rem] truncate font-semibold hover:underline">
                       {u.name}
                     </Link>
                     <span className="text-xs text-orc-muted">{roleLabel[u.role] ?? u.role}</span>

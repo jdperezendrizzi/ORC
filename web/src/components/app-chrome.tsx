@@ -164,7 +164,14 @@ export function LogoutButton() {
       return;
     }
     await clearLocalData();
-    navigator.serviceWorker?.controller?.postMessage({ type: "CLEAR_PAGES" });
+    // Al SW activo (puede no controlar todavía esta página).
+    const reg = await navigator.serviceWorker?.getRegistration().catch(() => undefined);
+    (reg?.active ?? navigator.serviceWorker?.controller)?.postMessage({ type: "CLEAR_PAGES" });
+    try {
+      window.sessionStorage.removeItem(PRECACHE_KEY);
+    } catch {
+      /* sin storage */
+    }
     await supabaseBrowser().auth.signOut();
     window.location.href = "/login";
   }
@@ -175,13 +182,39 @@ export function LogoutButton() {
   );
 }
 
-/** Con sesión iniciada y señal, guarda las páginas de cancha para usarlas offline. */
+const PRECACHE_KEY = "orc-precache-field-pages";
+
+/**
+ * Con sesión iniciada y señal, guarda las páginas de cancha para usarlas
+ * offline. Una vez por sesión del navegador (no en cada página) y cuando el
+ * navegador queda libre: así no compite con la carga de la página actual.
+ */
 export function PrecacheFieldPages() {
   useEffect(() => {
     if (!navigator.onLine || !("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.ready
-      .then((reg) => reg.active?.postMessage({ type: "PRECACHE_FIELD_PAGES" }))
-      .catch(() => undefined);
+    try {
+      if (window.sessionStorage.getItem(PRECACHE_KEY)) return;
+    } catch {
+      /* sin storage: se precarga igual */
+    }
+    const run = () => {
+      navigator.serviceWorker.ready
+        .then((reg) => {
+          reg.active?.postMessage({ type: "PRECACHE_FIELD_PAGES" });
+          try {
+            window.sessionStorage.setItem(PRECACHE_KEY, "1");
+          } catch {
+            /* sin storage */
+          }
+        })
+        .catch(() => undefined);
+    };
+    const hasIdle = typeof window.requestIdleCallback === "function";
+    const id = hasIdle ? window.requestIdleCallback(run, { timeout: 5000 }) : setTimeout(run, 2000);
+    return () => {
+      if (hasIdle) window.cancelIdleCallback(id as number);
+      else clearTimeout(id);
+    };
   }, []);
   return null;
 }

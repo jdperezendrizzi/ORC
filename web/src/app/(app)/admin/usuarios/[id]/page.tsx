@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionForm } from "@/components/action-form";
 import { loadCatalog, requireAdmin } from "@/lib/admin";
@@ -8,6 +7,7 @@ import type { Profile } from "@/lib/types";
 import { updateUser } from "../../actions";
 import { ModulePermissions } from "../module-permissions";
 import { RoleAndCategories } from "../user-fields";
+import { BackToUsers } from "../back-to-users";
 
 export const metadata: Metadata = { title: "Usuario" };
 export const dynamic = "force-dynamic";
@@ -42,9 +42,7 @@ export default async function AdminUser({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="space-y-4">
-      <Link href="/admin/usuarios" className="text-sm text-orc-muted" scroll={false}>
-        ← Usuarios
-      </Link>
+      <BackToUsers />
       <section className="card space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-lg font-bold">{p.full_name}</h2>

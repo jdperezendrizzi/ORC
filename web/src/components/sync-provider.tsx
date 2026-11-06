@@ -27,10 +27,18 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const busy = useRef(false);
 
-  const reload = useCallback(async () => setItems(await listOutbox()), []);
+  // Sólo actualiza el estado si la cola cambió: cada cambio de estado acá
+  // re-renderiza el indicador del header y, si llega mientras React todavía
+  // está conectando la página del servidor, provoca un error de hidratación.
+  const reload = useCallback(async () => {
+    const next = await listOutbox();
+    setItems((prev) => (sameItems(prev, next) ? prev : next));
+  }, []);
 
   const syncNow = useCallback(async () => {
     if (busy.current || !navigator.onLine) return;
+    // Sin nada pendiente no hay que sincronizar (ni mostrar «Sincronizando…»).
+    if (!(await listOutbox()).some((i) => i.status === "pending")) return;
     busy.current = true;
     setSyncing(true);
     try {
@@ -47,8 +55,8 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
           return { error: { message: e instanceof Error ? e.message : String(e) } };
         }
       };
-      await syncOutbox(upload);
-      setLastSyncAt(Date.now());
+      const report = await syncOutbox(upload);
+      if (report.synced > 0 || report.failed > 0) setLastSyncAt(Date.now());
     } finally {
       busy.current = false;
       setSyncing(false);
@@ -57,8 +65,15 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   }, [reload]);
 
   useEffect(() => {
-    setOnline(navigator.onLine);
-    void reload();
+    // Arranca cuando el navegador queda libre: así no cambia nada mientras
+    // React termina de conectar la página que mandó el servidor.
+    const start = () => {
+      if (!navigator.onLine) setOnline(false);
+      void reload();
+      void syncNow();
+    };
+    const hasIdle = typeof window.requestIdleCallback === "function";
+    const idle = hasIdle ? window.requestIdleCallback(start, { timeout: 2000 }) : setTimeout(start, 300);
     const off = onOutboxChange(() => void reload());
     const goOnline = () => {
       setOnline(true);
@@ -68,8 +83,9 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("online", goOnline);
     window.addEventListener("offline", goOffline);
     const timer = window.setInterval(() => void syncNow(), SYNC_INTERVAL_MS);
-    void syncNow();
     return () => {
+      if (hasIdle) window.cancelIdleCallback(idle as number);
+      else clearTimeout(idle);
       off();
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
@@ -106,4 +122,9 @@ export function useSync(): SyncState {
   const ctx = useContext(SyncContext);
   if (!ctx) throw new Error("useSync fuera de <SyncProvider>");
   return ctx;
+}
+
+function sameItems(a: OutboxItem[], b: OutboxItem[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((x, i) => x.key === b[i].key && x.status === b[i].status && x.updatedAt === b[i].updatedAt && x.attempts === b[i].attempts);
 }

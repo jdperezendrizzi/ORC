@@ -11,7 +11,7 @@
 // Para que /cargar y /bienestar funcionen sin señal hay que abrirlas una vez
 // con señal (quedan guardadas). La app las precarga después del login.
 
-const VERSION = "orc-v6";
+const VERSION = "orc-v7";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGES_CACHE = `${VERSION}-pages`;
 const PRECACHE_PAGES = ["/offline"];
@@ -28,7 +28,10 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) => Promise.all(keys.filter((k) => !k.startsWith(VERSION)).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim()),
+      // Sin clients.claim(): tomar el control de una página que se está
+      // cargando provocaba errores de hidratación. Controla desde la
+      // próxima navegación (las páginas de cancha se guardan igual).
+      .then(() => undefined),
   );
 });
 
