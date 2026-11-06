@@ -67,7 +67,74 @@ export async function buildAttendancePdf(
       y += lines.length * 4.6;
     }
   }
-  y += 6;
+  y += 4;
+
+  // Gráfico semana a semana (prácticas y partidos), igual que en la app
+  const first = r.weeks.findIndex((w) => w.pct !== null);
+  const weeks = first < 0 ? [] : r.weeks.slice(first).slice(-20);
+  const hasP = weeks.some((w) => w.practicePct !== null);
+  const hasM = weeks.some((w) => w.matchPct !== null);
+  if (weeks.length) {
+    const BLUE: [number, number, number] = [3, 105, 161];
+    const GRID: [number, number, number] = [217, 212, 207];
+    const chartH = 42;
+    const top = y + 6;
+    const base = top + chartH;
+    const left = M + 8;
+    const width = W - M - left;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(...BLACK);
+    doc.text("Semana a semana", M, y + 1);
+    // Leyenda
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    let lx = W - M;
+    const legend = [...(hasM ? [{ c: BLUE, t: "Partidos" }] : []), ...(hasP ? [{ c: ORANGE, t: "Prácticas" }] : [])];
+    for (const l of legend) {
+      const tw = doc.getTextWidth(l.t);
+      lx -= tw;
+      doc.setTextColor(...MUTED);
+      doc.text(l.t, lx, y + 1);
+      lx -= 4.5;
+      doc.setFillColor(...l.c);
+      doc.rect(lx, y - 1.6, 3, 3, "F");
+      lx -= 5;
+    }
+    // Líneas guía 0 / 50 / 100 %
+    doc.setDrawColor(...GRID);
+    doc.setFontSize(7);
+    doc.setTextColor(...MUTED);
+    for (const v of [0, 50, 100]) {
+      const gy = base - (v / 100) * chartH;
+      doc.line(left, gy, W - M, gy);
+      doc.text(`${v}`, left - 1.5, gy + 1, { align: "right" });
+    }
+    const slot = width / weeks.length;
+    const series = [...(hasP ? ["p"] : []), ...(hasM ? ["m"] : [])];
+    const barW = Math.min(7, (slot * 0.8) / series.length);
+    weeks.forEach((w, i) => {
+      const cx = left + slot * i + slot / 2;
+      const startX = cx - (barW * series.length) / 2;
+      series.forEach((k, j) => {
+        const pct = k === "p" ? w.practicePct : w.matchPct;
+        if (pct === null) return;
+        const h = Math.max(0.6, (pct / 100) * chartH);
+        const x = startX + j * barW;
+        doc.setFillColor(...(k === "p" ? ORANGE : BLUE));
+        doc.rect(x + 0.3, base - h, barW - 0.6, h, "F");
+        doc.setFontSize(6.5);
+        doc.setTextColor(...(pct < LOW_PCT ? BAD : BLACK));
+        doc.text(String(pct), x + barW / 2, base - h - 1, { align: "center" });
+      });
+      doc.setFontSize(6.5);
+      doc.setTextColor(...MUTED);
+      doc.text(`${Number(w.weekStart.slice(8, 10))}/${Number(w.weekStart.slice(5, 7))}`, cx, base + 4, { align: "center" });
+    });
+    y = base + 11;
+  } else {
+    y += 2;
+  }
 
   // Tabla
   const cols = [M, 92, 108, 124, 146, 166, 182];
