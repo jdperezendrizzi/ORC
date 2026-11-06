@@ -162,3 +162,16 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
   políticas RLS, benchmarks y funciones de compartir), no sólo en el menú. Tabla `user_module_permissions` (sólo
   guarda las restricciones; auditada). "Copiar permisos de…" y "Volver a los permisos del rol".
 * No cambian: notas clínicas (área médica/admin), consentimientos, decisión de pase y Admin (sólo admin).
+
+### Pase de temporada ("Aplicar pases")
+
+* **Admin → Temporada → Aplicar pases** (o, con permiso, Categoría → Pase de categoría → *Aplicar pases a la temporada
+  siguiente*). Con la temporada nueva ya creada (y todavía no actual): se elige la categoría y la temporada destino, y
+  aparece el plantel con la categoría propuesta: la **decisión** de la ficha de pase (sube → su destino; se queda →
+  misma categoría) o, sin decisión / en observación, la que le toca **por edad** (año de la temporada − año de
+  nacimiento; si ya no entra en ninguna, plantel superior). Se puede cambiar cada fila o destildar jugadores.
+* **Aplicar** pasa a todos juntos (`public.apply_promotions`, todo o nada) con el mismo puesto y sin camiseta; los que
+  ya tienen categoría en la temporada destino no se tocan. Queda en la auditoría.
+* Permiso: módulo **Pase de temporada**, apagado por defecto (sólo admin). El admin lo puede habilitar a un **profe**
+  (sólo pasa jugadores de sus categorías); al área médica no.
+* Después: asignar las categorías de los profes para la temporada nueva (Usuarios) y recién ahí marcarla como actual.

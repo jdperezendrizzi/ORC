@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/components/action-form";
 import { requireAdmin } from "@/lib/admin";
-import { MODULES, roleMax, type ModuleLevel } from "@/lib/modules";
+import { MODULES, roleDefault, roleMax, type ModuleLevel } from "@/lib/modules";
 import type { AppRole } from "@/lib/types";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -27,7 +27,7 @@ async function roleOf(profileId: string): Promise<AppRole | null> {
   return (data?.role as AppRole) ?? null;
 }
 
-/** Guarda sólo las restricciones (lo que queda por debajo del máximo del rol). */
+/** Guarda sólo lo que difiere del valor por defecto del rol (restricciones o habilitaciones). */
 export async function saveModulePermissions(_: ActionResult, f: FormData): Promise<ActionResult> {
   const profileId = str(f, "profile_id");
   const role = await roleOf(profileId);
@@ -40,10 +40,10 @@ export async function saveModulePermissions(_: ActionResult, f: FormData): Promi
     const max = roleMax(role, m.id);
     const order = { none: 0, view: 1, edit: 2 };
     if (order[level] > order[max]) return { error: `${m.label}: su rol permite como máximo «${max === "view" ? "Ve" : max === "none" ? "No ve" : "Carga"}».` };
-    if (level !== max) rows.push({ module: m.id, level });
+    if (level !== roleDefault(role, m.id)) rows.push({ module: m.id, level });
   }
   const err = await replace(profileId, rows);
-  return err ?? { ok: rows.length ? `Permisos guardados (${rows.length} restringidos).` : "Permisos guardados (los del rol)." };
+  return err ?? { ok: rows.length ? `Permisos guardados (${rows.length} ajustados respecto del rol).` : "Permisos guardados (los del rol)." };
 }
 
 export async function resetModulePermissions(_: ActionResult, f: FormData): Promise<ActionResult> {
@@ -51,7 +51,7 @@ export async function resetModulePermissions(_: ActionResult, f: FormData): Prom
   return err ?? { ok: "Volvió a los permisos de su rol." };
 }
 
-/** Copia las restricciones de otro usuario (respetando el máximo del rol de destino). */
+/** Copia los ajustes de otro usuario (respetando el máximo del rol de destino). */
 export async function copyModulePermissions(_: ActionResult, f: FormData): Promise<ActionResult> {
   const { supabase } = await requireAdmin();
   const to = str(f, "profile_id");
@@ -64,12 +64,13 @@ export async function copyModulePermissions(_: ActionResult, f: FormData): Promi
   const order = { none: 0, view: 1, edit: 2 };
   const rows = (data ?? [])
     .map((r) => {
-      const max = roleMax(role, r.module as (typeof MODULES)[number]["id"]);
+      const id = r.module as (typeof MODULES)[number]["id"];
+      const max = roleMax(role, id);
       const level = (order[r.level as ModuleLevel] < order[max] ? r.level : max) as ModuleLevel;
-      return { module: r.module as string, level, max };
+      return { module: r.module as string, level, def: roleDefault(role, id) };
     })
-    .filter((r) => r.level !== r.max)
+    .filter((r) => r.level !== r.def)
     .map(({ module, level }) => ({ module, level }));
   const err = await replace(to, rows);
-  return err ?? { ok: `Permisos copiados (${rows.length} restringidos).` };
+  return err ?? { ok: `Permisos copiados (${rows.length} ajustados).` };
 }

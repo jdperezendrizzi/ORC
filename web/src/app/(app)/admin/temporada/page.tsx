@@ -52,8 +52,9 @@ export default async function AdminSeasons() {
         <div>
           <h2 className="text-lg font-bold">Nueva temporada</h2>
           <p className="text-sm text-orc-muted">
-            Al empezar el año: creala, asigná a cada jugador su nueva categoría (en Jugadores) y a cada profe sus categorías (en
-            Usuarios). Recién ahí marcala como actual.
+            Al terminar el año: 1) creá la temporada nueva; 2) <a href="/pase-de-temporada" className="font-semibold text-orc-orange-strong">Aplicar pases</a>{" "}
+            para pasar a cada categoría de una vez; 3) asigná a cada profe sus categorías (en Usuarios); 4) recién ahí marcala como
+            actual.
           </p>
         </div>
         <ActionForm action={createSeason} submitLabel="Crear temporada" resetOnSuccess>

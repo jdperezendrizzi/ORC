@@ -4,7 +4,7 @@ import { canEdit, canView, effectiveModules, roleMax } from "../modules";
 describe("permisos por módulo", () => {
   it("valores por defecto = lo que el rol podía antes", () => {
     const coach = effectiveModules("coach", true);
-    expect(Object.values(coach).every((l) => l === "edit")).toBe(true);
+    expect(Object.entries(coach).every(([m, l]) => l === (m === "season_rollover" ? "none" : "edit"))).toBe(true);
     const med = effectiveModules("medical", true);
     expect(med).toMatchObject({ performance: "view", attendance: "view", objectives: "none", promotion: "view", injuries: "edit", sharing: "edit", insights: "edit", wellness: "edit" });
   });

@@ -138,7 +138,7 @@ export function UsersBrowser({
           </select>
           <label className="flex items-center gap-2 text-sm font-medium">
             <input type="checkbox" checked={onlyRestricted} onChange={(e) => setOnlyRestricted(e.target.checked)} className="size-5 accent-orc-orange" />
-            Con permisos restringidos
+            Con permisos ajustados
           </label>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -206,7 +206,7 @@ export function UsersBrowser({
                     ) : (
                       <span className="chip tone-amber text-xs">Sin categorías</span>
                     ))}
-                  {u.restricted > 0 && <span className="chip tone-amber text-xs">{u.restricted} restringidos</span>}
+                  {u.restricted > 0 && <span className="chip tone-amber text-xs">{u.restricted} ajustados</span>}
                   <span className={`chip text-xs ${u.active ? "tone-green" : "tone-amber"}`}>{u.active ? "Activo" : "Pendiente"}</span>
                   <span className="text-orc-muted" aria-hidden>
                     ›

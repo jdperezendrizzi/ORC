@@ -25,10 +25,10 @@ export function ModulePermissions({
 }) {
   if (role === "admin") return <p className="text-xs text-orc-muted">El admin tiene todos los módulos.</p>;
   return (
-    <Collapsible summary={`Permisos por módulo${restricted ? ` (${restricted} restringidos)` : " (los de su rol)"}`} className="text-sm" initiallyOpen={initiallyOpen}>
+    <Collapsible summary={`Permisos por módulo${restricted ? ` (${restricted} ajustados)` : " (los de su rol)"}`} className="text-sm" initiallyOpen={initiallyOpen}>
       <div className="mt-3 space-y-3">
         <p className="text-xs text-orc-muted">
-          El rol define el máximo; acá se puede restringir. Se combina con las categorías: lo que tenga habilitado lo ve o lo
+          El rol define el máximo; acá se puede restringir (y habilitar el pase de temporada a un profe). Se combina con las categorías: lo que tenga habilitado lo ve o lo
           carga sólo en sus categorías. Las notas clínicas, la decisión de pase y Admin no cambian.
         </p>
         <ActionForm action={saveModulePermissions} submitLabel="Guardar permisos" submitClassName="btn-ghost h-10">

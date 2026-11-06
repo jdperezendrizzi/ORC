@@ -36,7 +36,7 @@ set local role authenticated;
 
 -- Profe M17 con valores por defecto: todo en "carga"
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-a000-000000000017', true);
-select mp_t.is((select bool_and(value = '"edit"') from jsonb_each(public.my_modules())), 'profe: todos los módulos en carga por defecto');
+select mp_t.is((select bool_and(value = '"edit"') from jsonb_each(public.my_modules()) where key <> 'season_rollover'), 'profe: todos los módulos en carga por defecto (salvo pase de temporada)');
 select mp_t.is((select count(*) from injuries) > 0, 'profe ve lesiones por defecto');
 select mp_t.is((select count(*) from results) > 0, 'profe ve rendimiento por defecto');
 

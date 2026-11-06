@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { canView } from "@/lib/modules";
+import { canEdit, canView } from "@/lib/modules";
 import { notFound } from "next/navigation";
 import { getViewer, isStaff } from "@/lib/server-data";
 import { loadCategorySheet } from "@/lib/promotion-server";
@@ -40,6 +40,11 @@ export default async function CategoryPromotionPage({
           Decisiones: {count("decision", "promote")} suben · {count("decision", "observe")} en observación · {count("decision", "stay")} se quedan ·{" "}
           {rows.filter((r) => !r.decision).length} pendientes
         </p>
+        {canEdit(modules, "season_rollover") && (
+          <a href={`/pase-de-temporada?categoria=${category.id}`} className="btn-primary inline-flex">
+            Aplicar pases a la temporada siguiente →
+          </a>
+        )}
         {targetOptions.length > 1 && (
           <form method="get" className="flex flex-wrap items-end gap-2">
             <label className="block">
