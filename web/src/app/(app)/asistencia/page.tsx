@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { attendanceKindLabel, attendanceStatusLabel, type AttendanceRow } from "@/lib/attendance";
-import { buildAttendanceReport, LOW_PCT, periodFor, reportText, type KindFilter, type Preset } from "@/lib/attendance-report";
+import { attendanceInsights, buildAttendanceReport, LOW_PCT, periodFor, reportText, type KindFilter, type Preset } from "@/lib/attendance-report";
 import { fetchAll } from "@/lib/fetch-all";
 import { formatDate } from "@/lib/labels";
 import { canEdit, canView } from "@/lib/modules";
@@ -64,7 +64,8 @@ export default async function AttendanceSummaryPage({
     .filter((r) => nameOf.has(r.player_id) && (kind === "all" || r.kind === kind))
     .sort((a, b) => a.att_date.localeCompare(b.att_date) || (nameOf.get(a.player_id) ?? "").localeCompare(nameOf.get(b.player_id) ?? ""))
     .map((r) => ({ date: r.att_date, kind: attendanceKindLabel[r.kind], player: nameOf.get(r.player_id)!, status: attendanceStatusLabel[r.status] }));
-  const text = reportText(report, category.name, period.label);
+  const insights = attendanceInsights(report);
+  const text = reportText(report, category.name, period.label, insights);
   // Gráfico: desde la primera semana con asistencia y, como máximo, las últimas 20.
   const firstWithData = report.weeks.findIndex((w) => w.pct !== null);
   const weeks = firstWithData < 0 ? [] : report.weeks.slice(firstWithData).slice(-20);
@@ -132,12 +133,16 @@ export default async function AttendanceSummaryPage({
           <p className="text-xs text-orc-muted">{period.label}</p>
         </div>
         <div className="card p-3">
-          <p className="text-xs text-orc-muted">Prácticas</p>
-          <p className="text-2xl font-black tabular-nums">{report.practices}</p>
+          <p className="flex items-center gap-1.5 text-xs text-orc-muted">
+            <span className="inline-block size-2.5 rounded-sm bg-orc-orange" aria-hidden /> Prácticas ({report.practices})
+          </p>
+          <p className="text-2xl font-black tabular-nums">{report.practicePct === null ? "—" : `${report.practicePct}%`}</p>
         </div>
         <div className="card p-3">
-          <p className="text-xs text-orc-muted">Partidos</p>
-          <p className="text-2xl font-black tabular-nums">{report.matches}</p>
+          <p className="flex items-center gap-1.5 text-xs text-orc-muted">
+            <span className="inline-block size-2.5 rounded-sm bg-sky-700 dark:bg-sky-400" aria-hidden /> Partidos ({report.matches})
+          </p>
+          <p className="text-2xl font-black tabular-nums">{report.matchPct === null ? "—" : `${report.matchPct}%`}</p>
         </div>
       </section>
 
@@ -145,23 +150,64 @@ export default async function AttendanceSummaryPage({
         <p className="card text-sm">No se tomó asistencia en {category.name} en este período.</p>
       ) : (
         <>
+          {insights.length > 0 && (
+            <section className="card space-y-2 border-l-4 border-l-orc-orange" aria-label="Qué nos dice">
+              <h2 className="font-bold">Qué nos dice</h2>
+              <ul className="list-disc space-y-1 pl-5 text-sm">
+                {insights.map((t) => (
+                  <li key={t}>{t}</li>
+                ))}
+              </ul>
+              <p className="text-xs text-orc-muted">Lectura automática con reglas simples (sin IA). Son pistas para charlar, no conclusiones.</p>
+            </section>
+          )}
+
           <section className="card space-y-2" aria-label="Por semana">
-            <h2 className="font-bold">Semana a semana</h2>
-            <ul className="flex h-40 items-end gap-2 overflow-x-auto pb-1">
-              {weeks.map((w) => (
-                <li key={w.weekStart} className="flex h-full min-w-10 flex-1 flex-col items-center justify-end gap-1">
-                  <span className="text-xs font-semibold tabular-nums">{w.pct === null ? "" : `${w.pct}%`}</span>
-                  <span
-                    className={`w-full rounded-t ${w.pct === null ? "bg-orc-chip" : w.pct < LOW_PCT ? "bg-red-600" : "bg-orc-orange"}`}
-                    style={{ height: `${w.pct === null ? 4 : Math.max(4, w.pct)}%` }}
-                    title={`Semana del ${formatDate(w.weekStart)}: ${w.practices} prácticas, ${w.matches} partidos`}
-                  />
-                  <span className="text-[10px] text-orc-muted">{formatDate(w.weekStart)}</span>
-                </li>
-              ))}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-bold">Semana a semana</h2>
+              <span className="flex gap-3 text-xs">
+                {kind !== "match" && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block size-3 rounded-sm bg-orc-orange" aria-hidden /> Prácticas
+                  </span>
+                )}
+                {kind !== "practice" && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block size-3 rounded-sm bg-sky-700 dark:bg-sky-400" aria-hidden /> Partidos
+                  </span>
+                )}
+              </span>
+            </div>
+            <ul className="flex h-44 items-end gap-3 overflow-x-auto pb-1">
+              {weeks.map((w) => {
+                const bars = [
+                  ...(kind !== "match" ? [{ key: "p", pct: w.practicePct, n: w.practices, label: "Prácticas", color: "bg-orc-orange" }] : []),
+                  ...(kind !== "practice" ? [{ key: "m", pct: w.matchPct, n: w.matches, label: "Partidos", color: "bg-sky-700 dark:bg-sky-400" }] : []),
+                ];
+                return (
+                  <li key={w.weekStart} className="flex h-full min-w-12 flex-1 flex-col items-center justify-end gap-1">
+                    <div className="flex h-full w-full items-end justify-center gap-0.5">
+                      {bars.map((b) => (
+                        <div key={b.key} className="flex h-full flex-1 flex-col items-center justify-end">
+                          <span className={`text-[10px] font-semibold tabular-nums ${b.pct !== null && b.pct < LOW_PCT ? "text-red-700 dark:text-red-400" : ""}`}>
+                            {b.pct === null ? "" : b.pct}
+                          </span>
+                          <span
+                            className={`w-full rounded-t ${b.pct === null ? "bg-orc-chip" : b.color}`}
+                            style={{ height: `${b.pct === null ? 2 : Math.max(3, b.pct * 0.85)}%` }}
+                            title={`Semana del ${formatDate(w.weekStart)} · ${b.label}: ${b.pct === null ? "sin datos" : `${b.pct} %`} (${b.n})`}
+                            aria-label={`Semana del ${formatDate(w.weekStart)}, ${b.label}: ${b.pct === null ? "sin datos" : `${b.pct} %`}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-orc-muted">{formatDate(w.weekStart)}</span>
+                  </li>
+                );
+              })}
             </ul>
             <p className="text-xs text-orc-muted">
-              Asistencia de cada semana (desde el lunes). En rojo, menos de {LOW_PCT} %.
+              Asistencia de cada semana (desde el lunes), en %. En rojo, menos de {LOW_PCT} %.
               {report.weeks.length - Math.max(firstWithData, 0) > 20 && " Se muestran las últimas 20 semanas."}
             </p>
           </section>
@@ -174,7 +220,9 @@ export default async function AttendanceSummaryPage({
                   <th className="px-3 py-2 text-right">Pres.</th>
                   <th className="px-3 py-2 text-right">Aus.</th>
                   <th className="px-3 py-2 text-right">Just.</th>
-                  <th className="px-3 py-2 text-right">%</th>
+                  {kind === "all" && <th className="px-3 py-2 text-right">Práct.</th>}
+                  {kind === "all" && <th className="px-3 py-2 text-right">Partidos</th>}
+                  <th className="px-3 py-2 text-right">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-orc-line">
@@ -190,6 +238,12 @@ export default async function AttendanceSummaryPage({
                       <td className="px-3 py-2 text-right tabular-nums">{p.present}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{p.absent}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{p.excused}</td>
+                      {kind === "all" && (
+                        <td className="px-3 py-2 text-right tabular-nums text-orc-muted">{p.practicePct === null ? "—" : `${p.practicePct}%`}</td>
+                      )}
+                      {kind === "all" && (
+                        <td className="px-3 py-2 text-right tabular-nums text-orc-muted">{p.matchPct === null ? "—" : `${p.matchPct}%`}</td>
+                      )}
                       <td className={`px-3 py-2 text-right font-bold tabular-nums ${low ? "text-red-700 dark:text-red-400" : ""}`}>
                         {p.pct === null ? "—" : `${p.pct}%`}
                       </td>
@@ -210,6 +264,7 @@ export default async function AttendanceSummaryPage({
           report={report}
           detail={detail}
           text={text}
+          insights={insights}
           categoryId={category.id}
           categoryName={category.name}
           periodLabel={period.label}

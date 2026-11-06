@@ -5,7 +5,7 @@ import { LOW_PCT } from "../attendance-report";
 
 export async function buildAttendancePdf(
   r: AttendanceReport,
-  meta: { categoryName: string; periodLabel: string; seasonName: string },
+  meta: { categoryName: string; periodLabel: string; seasonName: string; insights?: string[] },
   crestDataUrl: string | null,
 ): Promise<Blob> {
   const { jsPDF } = await import("jspdf");
@@ -50,11 +50,28 @@ export async function buildAttendancePdf(
     M + 30,
     y - 1,
   );
-  y += 10;
+  y += 6;
+  if (r.practicePct !== null || r.matchPct !== null) {
+    doc.setFontSize(10.5);
+    doc.setTextColor(...BLACK);
+    doc.text(`Prácticas ${r.practicePct ?? "—"} %   ·   Partidos ${r.matchPct ?? "—"} %`, M, y);
+    y += 6;
+  }
+  const insights = meta.insights ?? [];
+  if (insights.length) {
+    doc.setFontSize(9.5);
+    doc.setTextColor(...MUTED);
+    for (const t of insights) {
+      const lines = doc.splitTextToSize(`• ${t}`, W - 2 * M) as string[];
+      doc.text(lines, M, y);
+      y += lines.length * 4.6;
+    }
+  }
+  y += 6;
 
   // Tabla
-  const cols = [M, 110, 132, 154, 180];
-  const head = ["Jugador", "Pres.", "Aus.", "Just.", "%"];
+  const cols = [M, 92, 108, 124, 146, 166, 182];
+  const head = ["Jugador", "Pres.", "Aus.", "Just.", "Práct.", "Partidos", "Total"];
   const row = (vals: string[], bold = false, color: [number, number, number] = BLACK) => {
     doc.setFont("helvetica", bold ? "bold" : "normal");
     doc.setTextColor(...color);
@@ -72,7 +89,8 @@ export async function buildAttendancePdf(
       y = 42;
     }
     const low = p.pct !== null && p.pct < LOW_PCT;
-    row([p.name, String(p.present), String(p.absent), String(p.excused), p.pct === null ? "—" : `${p.pct} %`], low, low ? BAD : BLACK);
+    const pc = (v: number | null) => (v === null ? "—" : `${v} %`);
+    row([p.name, String(p.present), String(p.absent), String(p.excused), pc(p.practicePct), pc(p.matchPct), pc(p.pct)], low, low ? BAD : BLACK);
     doc.setDrawColor(217, 212, 207);
     doc.line(M - 2, y + 2, W - M + 2, y + 2);
     y += 7;

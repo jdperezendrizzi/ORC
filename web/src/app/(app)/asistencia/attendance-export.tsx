@@ -42,6 +42,7 @@ export function AttendanceExport({
   report,
   detail,
   text,
+  insights,
   categoryId,
   categoryName,
   periodLabel,
@@ -50,6 +51,7 @@ export function AttendanceExport({
   report: AttendanceReport;
   detail: DetailRow[];
   text: string;
+  insights: string[];
   categoryId: string;
   categoryName: string;
   periodLabel: string;
@@ -72,16 +74,26 @@ export function AttendanceExport({
         const { default: writeExcelFile } = await import("write-excel-file/browser");
         const h = (v: string) => ({ value: v, fontWeight: "bold" as const });
         const resumen = [
-          [h("Jugador"), h("Presentes"), h("Ausentes"), h("Justificadas"), h("Asistencia %")],
+          [h("Jugador"), h("Presentes"), h("Ausentes"), h("Justificadas"), h("Prácticas %"), h("Partidos %"), h("Total %")],
           ...report.players.map((p) => [
             { value: p.name },
             { value: p.present, type: Number },
             { value: p.absent, type: Number },
             { value: p.excused, type: Number },
+            p.practicePct === null ? null : { value: p.practicePct, type: Number },
+            p.matchPct === null ? null : { value: p.matchPct, type: Number },
             p.pct === null ? null : { value: p.pct, type: Number },
           ]),
           [],
-          [{ value: "Promedio del equipo" }, null, null, null, report.avgPct === null ? null : { value: report.avgPct, type: Number }],
+          [
+            { value: "Promedio del equipo" },
+            null,
+            null,
+            null,
+            report.practicePct === null ? null : { value: report.practicePct, type: Number },
+            report.matchPct === null ? null : { value: report.matchPct, type: Number },
+            report.avgPct === null ? null : { value: report.avgPct, type: Number },
+          ],
           [{ value: `Prácticas: ${report.practices} · Partidos: ${report.matches}` }],
         ];
         const detalle = [
@@ -89,12 +101,17 @@ export function AttendanceExport({
           ...detail.map((d) => [{ value: d.date }, { value: d.kind }, { value: d.player }, { value: d.status }]),
         ];
         await writeExcelFile([
-          { data: resumen, sheet: "Resumen", columns: [{ width: 28 }, { width: 11 }, { width: 11 }, { width: 13 }, { width: 13 }], stickyRowsCount: 1 },
+          {
+            data: resumen,
+            sheet: "Resumen",
+            columns: [{ width: 28 }, { width: 11 }, { width: 11 }, { width: 13 }, { width: 12 }, { width: 12 }, { width: 10 }],
+            stickyRowsCount: 1,
+          },
           { data: detalle, sheet: "Detalle", columns: [{ width: 12 }, { width: 10 }, { width: 28 }, { width: 13 }], stickyRowsCount: 1 },
         ] as never).toFile(`${base}.xlsx`);
         setMsg({ ok: "Excel descargado." });
       } else if (format === "pdf") {
-        const blob = await buildAttendancePdf(report, { categoryName, periodLabel, seasonName }, await crestDataUrl());
+        const blob = await buildAttendancePdf(report, { categoryName, periodLabel, seasonName, insights }, await crestDataUrl());
         const file = new File([blob], `${base}.pdf`, { type: "application/pdf" });
         try {
           if (navigator.canShare?.({ files: [file] })) {

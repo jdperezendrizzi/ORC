@@ -190,7 +190,12 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
 
 * **Asistencia → "Ver resumen del mes y compartir"** (o Categoría → *Resumen de asistencia*), en `/asistencia`:
   categoría, período (este mes, mes anterior, temporada u otro rango) y prácticas/partidos. Muestra asistencia promedio,
-  cantidad de prácticas y partidos, barras semana a semana y la tabla por jugador (de menor a mayor; en rojo < 60 %).
+  y por separado en prácticas y en partidos; barras semana a semana (prácticas en naranja, partidos en azul) y la tabla por
+  jugador (prácticas %, partidos %, total; de menor a mayor; en rojo < 60 %).
+* **Qué nos dice** (reglas simples, sin IA, `attendanceInsights`): prácticas vs. partidos (si la diferencia es de 5 puntos
+  o más), jugadores que van a los partidos pero faltan a las prácticas (< 70 % en prácticas y ≥ 90 % en partidos),
+  tendencia de las últimas 4 semanas, día de práctica con menos asistencia y la semana más baja (marca si fue por
+  faltas justificadas). Va también en el texto de WhatsApp ("Para mirar") y en el PDF.
 * **Sacarlo de la app**: texto para **WhatsApp**, **Excel** (hojas *Resumen* y *Detalle*) y **PDF** de una página con el
   escudo. Requiere el módulo Asistencia (ver) y Compartir (carga); cada exportación queda en `share_log`
   (`attendance_report`, vía `public.log_attendance_export`). Lleva nombres: uso interno del cuerpo técnico.
