@@ -158,3 +158,61 @@ body {
 :root[data-theme="dark"] .tone-amber { color: #fcd34d; }
 :root[data-theme="dark"] .tone-green { color: #86efac; }
 :root[data-theme="dark"] .tone-sky { color: #7dd3fc; }
+
+/* Indicador de carga al navegar (components/nav-progress.tsx) */
+.nav-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  height: 4px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-orc-orange) 25%, transparent);
+  padding-top: env(safe-area-inset-top);
+}
+.nav-progress > span {
+  display: block;
+  height: 4px;
+  width: 40%;
+  background: var(--color-orc-orange);
+  animation: nav-progress 1.1s ease-in-out infinite;
+}
+@keyframes nav-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+.nav-progress-pill {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 4.25rem);
+  left: 50%;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  background: var(--color-orc-black);
+  color: #fff;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.25);
+  opacity: 0;
+  animation: nav-pill-in 0.2s ease-out 0.35s forwards;
+  pointer-events: none;
+}
+@keyframes nav-pill-in {
+  to { opacity: 1; }
+}
+[data-nav-loading="true"] {
+  cursor: progress;
+  animation: nav-pulse 1s ease-in-out infinite;
+}
+@keyframes nav-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress > span { animation: none; width: 100%; opacity: 0.8; }
+  .nav-progress-pill { animation: none; opacity: 1; }
+  [data-nav-loading="true"] { animation: none; opacity: 0.55; }
+}

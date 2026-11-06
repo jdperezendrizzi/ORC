@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { AccountMenu, BottomNav, LogoutButton, PrecacheFieldPages, SyncBadge, TopNav } from "@/components/app-chrome";
 import { SyncProvider } from "@/components/sync-provider";
+import { NavProgress } from "@/components/nav-progress";
+import { Suspense } from "react";
 import { canLoadResults, getViewer, isStaff, roleLabel } from "@/lib/server-data";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -12,6 +14,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <SyncProvider>
+      <Suspense>
+        <NavProgress />
+      </Suspense>
       <header className="sticky top-0 z-30 bg-orc-black pt-[env(safe-area-inset-top)] text-white">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-2 px-4 sm:gap-3">
           <a href="/" className="flex items-center gap-2" aria-label="Inicio">

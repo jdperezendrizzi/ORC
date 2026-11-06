@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { AccountMenu } from "@/components/app-chrome";
 import { SyncProvider } from "@/components/sync-provider";
+import { NavProgress } from "@/components/nav-progress";
+import { Suspense } from "react";
 import { getViewer } from "@/lib/server-data";
 
 /** Portal de solo lectura para jugadores y familias (sin el menú del cuerpo técnico). */
@@ -9,6 +11,9 @@ export default async function PortalLayout({ children }: { children: React.React
   if (!profile || !["player", "guardian"].includes(profile.role)) redirect("/");
   return (
     <SyncProvider>
+      <Suspense>
+        <NavProgress />
+      </Suspense>
       <header className="sticky top-0 z-30 bg-orc-black pt-[env(safe-area-inset-top)] text-white">
         <div className="mx-auto flex h-14 max-w-3xl items-center gap-3 px-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
