@@ -199,3 +199,11 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
 * **Sacarlo de la app**: texto para **WhatsApp**, **Excel** (hojas *Resumen* y *Detalle*) y **PDF** de una página con el
   escudo. Requiere el módulo Asistencia (ver) y Compartir (carga); cada exportación queda en `share_log`
   (`attendance_report`, vía `public.log_attendance_export`). Lleva nombres: uso interno del cuerpo técnico.
+
+### Identidad visual
+
+* Logo oficial del club en `assets/brand/` (`Logo-RGB.svg` para pantalla, `Logo-CMYK.svg` para imprenta).
+* En la app: `web/public/logo.svg` (el RGB recortado a su contorno, sin deformar) para el encabezado, login y pantallas;
+  `web/public/crest.png` (514×560) para los PDF; íconos de la app y favicon en `web/public/icons/` generados del mismo SVG.
+* Naranja oficial **#F65F01** (`--color-orc-orange`), siempre con texto negro (5,1:1). Texto/links naranjas:
+  `#A84000` en tema claro y `#FF8A3D` en oscuro (≥ 5:1); hover `#FF7A24`.

@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
-/* Identidad ORC: colores tomados del escudo oficial (public/crest.png):
-   negro #231F20, naranja #F1882A y blanco.
+/* Identidad ORC: colores del logo oficial (public/logo.svg):
+   negro, naranja #F65F01 y blanco.
 
    Tema: claro / oscuro / sistema. El usuario elige en el header; se guarda
    en el dispositivo y se aplica como <html data-theme="light|dark">. Sin
    elección (sistema) manda prefers-color-scheme.
 
    Reglas de contraste (WCAG AA):
-   * El naranja va siempre con texto NEGRO (~6.5:1); blanco sobre naranja no cumple.
+   * El naranja va siempre con texto NEGRO (~5.1:1); blanco sobre naranja no cumple (3.2:1).
    * Para texto naranja sobre fondo claro se usa orc-orange-strong (más oscuro).
    * Campos y opciones sin elegir llevan borde orc-line-strong (≥3:1 con el fondo),
      para que se distingan de la tarjeta. */
 @theme {
-  --color-orc-orange: #f1882a;
-  --color-orc-orange-hover: #e07818;
-  --color-orc-orange-strong: #b5570c;   /* texto/links naranjas */
-  --color-orc-orange-soft: #fdeedd;     /* fondos suaves de resalte */
+  --color-orc-orange: #f65f01;          /* naranja oficial del logo */
+  --color-orc-orange-hover: #ff7a24;    /* más claro: con texto negro 6.3:1 */
+  --color-orc-orange-strong: #a84000;   /* texto/links naranjas (≥5:1 en fondos claros) */
+  --color-orc-orange-soft: #feeadb;     /* fondos suaves de resalte */
   --color-orc-black: #231f20;           /* header, fichas oscuras */
   --color-orc-ink: #1c1917;             /* texto principal */
   --color-orc-muted: #57534e;           /* texto secundario */
@@ -39,9 +39,9 @@
    (si el usuario no eligió "claro") o por elección explícita. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-orc-orange-hover: #f59a48;
-    --color-orc-orange-strong: #f7a65c;
-    --color-orc-orange-soft: #3a2614;
+    --color-orc-orange-hover: #ff7a24;
+    --color-orc-orange-strong: #ff8a3d;
+    --color-orc-orange-soft: #3d1f0c;
     --color-orc-ink: #f3efea;
     --color-orc-muted: #b8afa8;
     --color-orc-line: #3b3435;
@@ -60,9 +60,9 @@
   }
 }
 :root[data-theme="dark"] {
-  --color-orc-orange-hover: #f59a48;
-  --color-orc-orange-strong: #f7a65c;
-  --color-orc-orange-soft: #3a2614;
+  --color-orc-orange-hover: #ff7a24;
+  --color-orc-orange-strong: #ff8a3d;
+  --color-orc-orange-soft: #3d1f0c;
   --color-orc-ink: #f3efea;
   --color-orc-muted: #b8afa8;
   --color-orc-line: #3b3435;

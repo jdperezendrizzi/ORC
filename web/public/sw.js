@@ -11,7 +11,7 @@
 // Para que /cargar y /bienestar funcionen sin señal hay que abrirlas una vez
 // con señal (quedan guardadas). La app las precarga después del login.
 
-const VERSION = "orc-v7";
+const VERSION = "orc-v8";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGES_CACHE = `${VERSION}-pages`;
 const PRECACHE_PAGES = ["/offline"];
@@ -61,7 +61,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname === "/crest.png") {
+  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname === "/crest.png" || url.pathname === "/logo.svg") {
     event.respondWith(
       caches.match(req).then(
         (hit) =>

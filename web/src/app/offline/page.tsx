@@ -4,7 +4,7 @@ export default function OfflinePage() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center bg-orc-black px-6 text-center text-white">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/crest.png" alt="" width={250} height={278} className="h-[90px] w-auto" />
+      <img src="/logo.svg" alt="" width={514} height={560} className="h-[90px] w-auto" />
       <h1 className="mt-6 text-xl font-bold">Sin conexión</h1>
       <p className="mt-2 max-w-xs text-white/70">
         Esta página necesita señal. Las evaluaciones, el bienestar, la asistencia, los objetivos y el registro de lesiones funcionan sin conexión y se suben solos

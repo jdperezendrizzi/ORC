@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "ORC", statusBarStyle: "black" },
   icons: {
     icon: [
-      { url: "/crest.png", type: "image/png" },
+      { url: "/logo.svg", type: "image/svg+xml" },
       { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
     ],
     apple: "/icons/apple-touch-icon.png",

@@ -50,8 +50,8 @@ export async function buildPlayerReportPdf(data: ReportData, crestDataUrl: strin
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = 210;
   const M = 14; // margen
-  const ORANGE: [number, number, number] = [241, 136, 42];
-  const ORANGE_TEXT: [number, number, number] = [181, 87, 12];
+  const ORANGE: [number, number, number] = [246, 95, 1]; // naranja oficial #F65F01
+  const ORANGE_TEXT: [number, number, number] = [168, 64, 0];
   const BLACK: [number, number, number] = [35, 31, 32];
   const MUTED: [number, number, number] = [96, 90, 85];
   const GOOD: [number, number, number] = [21, 128, 61];
@@ -62,7 +62,7 @@ export async function buildPlayerReportPdf(data: ReportData, crestDataUrl: strin
   doc.rect(0, 0, W, 30, "F");
   doc.setFillColor(...ORANGE);
   doc.rect(0, 30, W, 1.4, "F");
-  if (crestDataUrl) doc.addImage(crestDataUrl, "PNG", M, 4.5, 19.8, 22, "crest", "FAST");
+  if (crestDataUrl) doc.addImage(crestDataUrl, "PNG", M, 4.5, 20.2, 22, "crest", "FAST"); // proporción del logo oficial (514×560)
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(17);

@@ -40,6 +40,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // Todo salvo estáticos, íconos, manifest y service worker.
-    "/((?!_next/static|_next/image|icons/|crest.png|favicon.ico|manifest.webmanifest|sw.js).*)",
+    "/((?!_next/static|_next/image|icons/|crest.png|logo.svg|favicon.ico|manifest.webmanifest|sw.js).*)",
   ],
 };
