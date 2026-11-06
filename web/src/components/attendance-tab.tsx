@@ -176,6 +176,10 @@ export function AttendanceTab({ data, categoryId, date, readOnly = false }: { da
           );
         })}
       </ul>
+      <a href={`/asistencia?cat=${categoryId}`} className="card flex items-center justify-between py-3 font-semibold text-orc-orange-strong hover:border-orc-orange">
+        Ver resumen del mes y compartir
+        <span aria-hidden>›</span>
+      </a>
       <p className="text-xs text-orc-muted">
         Justificado (enfermedad, examen, viaje) no cuenta como falta. La asistencia % es presentes sobre presentes + ausentes.
       </p>

@@ -226,7 +226,12 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
           Mejor marca de cada jugador en la temporada. <b>10 m</b>: sprint en segundos (menos es mejor) ·{" "}
           <b>CMJ</b>: salto en cm (potencia) · <b>Yo-Yo</b>: metros en el test de resistencia ·{" "}
           <b>Sentadilla</b>: 1RM en kg (fuerza de piernas) · <b>Asist.</b>: asistencia de la temporada
-          ({practiceDays} {practiceDays === 1 ? "día" : "días"} con asistencia tomada; en rojo, menos de 60 %). Tocá un jugador para ver su evolución.{" "}
+          ({practiceDays} {practiceDays === 1 ? "día" : "días"} con asistencia tomada; en rojo, menos de 60 %).{" "}
+          {can.att && (
+            <a href={`/asistencia?cat=${category.id}`} className="font-semibold text-orc-orange-strong">
+              Resumen de asistencia →
+            </a>
+          )} Tocá un jugador para ver su evolución.{" "}
           <a href="/guia" className="font-semibold text-orc-orange-strong">
             Qué significa cada dato →
           </a>

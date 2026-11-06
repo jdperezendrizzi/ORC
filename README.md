@@ -185,3 +185,12 @@ El plan gratis de Supabase limita los emails de autenticación por hora.
 * **Menú de cuenta** (iniciales, arriba a la derecha): nombre, rol, tema claro/oscuro y **Cerrar sesión**.
 * Nombres: "Cargar" → **Evaluaciones**; "Pase de categoría / Ficha de pase" → **Evaluación de pase**;
   "Pase de temporada" → **Armar temporada** (las URLs no cambian).
+
+### Resumen de asistencia
+
+* **Práctica → Asistencia → "Ver resumen del mes y compartir"** (o Categoría → *Resumen de asistencia*), en `/asistencia`:
+  categoría, período (este mes, mes anterior, temporada u otro rango) y prácticas/partidos. Muestra asistencia promedio,
+  cantidad de prácticas y partidos, barras semana a semana y la tabla por jugador (de menor a mayor; en rojo < 60 %).
+* **Sacarlo de la app**: texto para **WhatsApp**, **Excel** (hojas *Resumen* y *Detalle*) y **PDF** de una página con el
+  escudo. Requiere el módulo Asistencia (ver) y Compartir (carga); cada exportación queda en `share_log`
+  (`attendance_report`, vía `public.log_attendance_export`). Lleva nombres: uso interno del cuerpo técnico.
