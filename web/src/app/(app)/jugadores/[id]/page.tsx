@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { methodLabel, type MeasureMethod } from "@/lib/field-tests/protocol";
 import { objectiveAreaLabel, objectiveState, playerProgress } from "@/lib/objectives";
 import type { Objective, ObjectiveCheck } from "@/lib/types";
 import { canEdit, canView } from "@/lib/modules";
@@ -62,7 +63,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
       supabase
         .from("test_metrics")
         .select("id, test_type_id, code, name, unit, higher_is_better, decimals, sort_order, input_role, derivation"),
-      supabase.from("v_session_best").select("metric_id").eq("player_id", id),
+      supabase.from("v_session_best").select("metric_id, methods, protocol_versions, devices").eq("player_id", id),
       supabase
         .from("v_maturation")
         .select("session_date, age, maturity_offset, age_at_phv, maturity_status")
@@ -102,6 +103,26 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         (types.get(a.test_type_id)?.sort_order ?? 0) - (types.get(b.test_type_id)?.sort_order ?? 0) ||
         a.sort_order - b.sort_order,
     );
+
+  // Series que mezclan métodos, versiones de protocolo o equipos: se avisa (nunca en silencio).
+  const howMeasured = new Map<string, { methods: Set<string>; versions: Set<string>; devices: Set<string> }>();
+  for (const b of (bestRes.data ?? []) as { metric_id: string; methods: string | null; protocol_versions: string | null; devices: string | null }[]) {
+    const h = howMeasured.get(b.metric_id) ?? { methods: new Set(), versions: new Set(), devices: new Set() };
+    for (const x of (b.methods ?? "").split(",").filter(Boolean)) h.methods.add(x);
+    for (const x of (b.protocol_versions ?? "").split(",").filter(Boolean)) h.versions.add(x);
+    for (const x of (b.devices ?? "").split(",").filter(Boolean)) h.devices.add(x);
+    howMeasured.set(b.metric_id, h);
+  }
+  const mixedNotes = displayMetrics.flatMap((m) => {
+    const h = howMeasured.get(m.id);
+    if (!h) return [];
+    const parts = [
+      h.methods.size > 1 && `métodos distintos (${[...h.methods].map((x) => methodLabel[x as MeasureMethod] ?? x).join(", ")})`,
+      h.versions.size > 1 && `versiones de protocolo distintas (v${[...h.versions].sort().join(", v")})`,
+      h.devices.size > 1 && `${h.devices.size} celulares distintos`,
+    ].filter(Boolean);
+    return parts.length ? [`${m.name}: la serie mezcla ${parts.join(" y ")}. No son del todo comparables.`] : [];
+  });
 
   // Serie + comparación por métrica (RPC con z-scores vs. categoría/unidad/línea/puesto).
   const series: MetricSeries[] = await Promise.all(
@@ -264,6 +285,16 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
       <section className="card">
         <InfoHeader title={<h2 className="font-bold">Evolución</h2>} info={CONCEPTS.evolution} className="mb-3" />
         <PlayerEvolution metrics={series.filter((s) => s.series.length > 0)} />
+        {mixedNotes.length > 0 && (
+          <ul className="mt-3 space-y-1 text-sm" aria-label="Avisos de comparación">
+            {mixedNotes.map((n) => (
+              <li key={n} className="rounded-lg border border-amber-500 px-3 py-2">
+                <span aria-hidden>⚠ </span>
+                {n}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
       )}
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { INSERT_ONLY_TABLES } from "@/lib/offline/db";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { OutboxItem } from "@/lib/offline/db";
@@ -45,11 +46,11 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
       const supabase = supabaseBrowser();
       const upload: Uploader = async (table, rows) => {
         try {
-          // Lesiones: el profe sólo puede crearlas (no editarlas), así que el
-          // reenvío usa ON CONFLICT DO NOTHING (no requiere permiso de edición).
+          // Lesiones e intentos de tests: sólo se crean (no se editan), así que
+          // el reenvío usa ON CONFLICT DO NOTHING (no requiere permiso de edición).
           const { error } = await supabase
             .from(table)
-            .upsert(rows, { onConflict: "id", ignoreDuplicates: table === "injuries" });
+            .upsert(rows, { onConflict: "id", ignoreDuplicates: INSERT_ONLY_TABLES.has(table) });
           return { error: error ? { message: error.message, code: error.code, hint: error.hint, details: error.details } : null };
         } catch (e) {
           return { error: { message: e instanceof Error ? e.message : String(e) } };

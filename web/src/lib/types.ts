@@ -11,6 +11,7 @@ export type TestDomain =
   | "endurance"
   | "rugby";
 export type SessionType = "testing" | "match" | "training";
+export type Sex = "male" | "female";
 export type InjuryStatus = "active" | "rehab" | "return_to_play" | "closed";
 
 export interface Profile {
@@ -82,7 +83,53 @@ export interface TestMetric {
   best_of: "max" | "min" | "avg" | "last";
   derivation: string | null;
   required_consent: string;
+  individual_only?: boolean;
   sort_order: number;
+}
+
+export interface TestProtocol {
+  id: string;
+  test_type_id: string;
+  version: number;
+  params: Record<string, unknown>;
+  notes: string | null;
+}
+
+export interface TestExclusion {
+  category_id: string;
+  test_type_id: string;
+  reason: string;
+}
+
+export interface MetricRange {
+  metric_id: string;
+  sex: Sex;
+  warn_min: number | null;
+  warn_max: number | null;
+}
+
+/** Intento de un test de cancha (sólo se agregan; corregir = anular). */
+export interface TestAttempt {
+  id: string;
+  session_id: string;
+  player_id: string;
+  test_type_id: string;
+  protocol_id: string;
+  attempt: number;
+  method: "manual" | "video" | "app" | "fotocelula" | "historico";
+  inputs: Record<string, unknown>;
+  conditions: string | null;
+  device_id: string | null;
+  notes: string | null;
+  recorded_at: string;
+  recorded_by?: string | null;
+}
+
+export interface TestAttemptVoid {
+  id: string;
+  attempt_id: string;
+  reason: string;
+  voided_at?: string;
 }
 
 export interface EvaluationSession {

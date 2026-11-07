@@ -3,6 +3,8 @@
 
 import type { DashMetric, DashPoint } from "./dashboard";
 import { formatValue } from "./validation";
+import { cmjBaseline, cmjVerdict, type CmjDayPoint } from "./field-tests/baseline";
+import { DEFAULT_PARAMS, type CmjParams } from "./field-tests/protocol";
 import { ABSENCE_STREAK, absenceStreak, attendancePct, type AttendanceRow } from "./attendance";
 
 // ---------------------------------------------------------------------
@@ -44,7 +46,7 @@ export const TRACKED_METRICS = new Set([
 // Tipos
 // ---------------------------------------------------------------------
 
-export type AlertKind = "injury_overdue" | "load_spike" | "wellness_low" | "absences" | "perf_drop";
+export type AlertKind = "injury_overdue" | "load_spike" | "wellness_low" | "absences" | "perf_drop" | "cmj_drop";
 export type Severity = "alta" | "media";
 
 export interface Alert {
@@ -88,6 +90,10 @@ export interface AlertInput {
   injuries: InjuryPoint[];
   /** Asistencia reciente (opcional: sin ella no hay alerta de faltas). */
   attendance?: AttendanceRow[];
+  /** Saltos CMJ recientes con su método (opcional: alerta del CMJ semanal). */
+  cmj?: (CmjDayPoint & { player_id: string })[];
+  /** Parámetros del CMJ semanal (del protocolo vigente). */
+  cmjWeekly?: CmjParams["weekly"];
 }
 
 export const alertKindLabel: Record<AlertKind, string> = {
@@ -96,6 +102,7 @@ export const alertKindLabel: Record<AlertKind, string> = {
   wellness_low: "Bienestar bajo",
   absences: "Faltas seguidas",
   perf_drop: "Bajó el rendimiento",
+  cmj_drop: "Salto bajo (CMJ)",
 };
 
 // ---------------------------------------------------------------------
@@ -169,7 +176,7 @@ function groupBy<T>(rows: T[], key: (r: T) => string): Map<string, T[]> {
 }
 
 const SEVERITY_ORDER: Record<Severity, number> = { alta: 0, media: 1 };
-const KIND_ORDER: Record<AlertKind, number> = { injury_overdue: 0, load_spike: 1, wellness_low: 2, absences: 3, perf_drop: 4 };
+const KIND_ORDER: Record<AlertKind, number> = { injury_overdue: 0, load_spike: 1, cmj_drop: 2, wellness_low: 3, absences: 4, perf_drop: 5 };
 
 export function computeAlerts(input: AlertInput): Alert[] {
   const { today } = input;
@@ -244,11 +251,34 @@ export function computeAlerts(input: AlertInput): Alert[] {
     }
   }
 
-  // 5. Caída de rendimiento en tests físicos
+  // 5. CMJ semanal: el salto del último día contra la base del jugador
+  //    (misma función que la pantalla de carga; mismo método).
+  const w = input.cmjWeekly ?? DEFAULT_PARAMS.cmj.weekly;
+  const withCmjBase = new Set<string>();
+  for (const [playerId, pts] of groupBy(input.cmj ?? [], (p) => p.player_id)) {
+    const last = pts.reduce((m, p) => (p.date > m ? p.date : m), "");
+    if (!last || last > today || daysBetween(last, today) > 7) continue;
+    const best = pts.filter((p) => p.date === last).reduce((a, b) => (b.value > a.value ? b : a));
+    const base = cmjBaseline(pts, last, best.method, w);
+    if (base.value === null) continue;
+    withCmjBase.add(playerId);
+    const v = cmjVerdict(best.value, base.value, w);
+    if (v.level === "ok") continue;
+    push({
+      kind: "cmj_drop",
+      severity: v.level === "crit" ? "alta" : "media",
+      playerId,
+      detail: `CMJ ${formatValue(best.value, 1)} cm el ${shortDate(last)}: ${formatValue(v.dropPct, 1)} % por debajo de su base (${formatValue(base.value, 1)} cm, ${base.days} días). Pista de fatiga, no diagnóstico.`,
+      href: `/jugadores/${playerId}`,
+    });
+  }
+
+  // 6. Caída de rendimiento en tests físicos
+  //    (el CMJ con base semanal ya lo cubre la regla anterior)
   const tracked = input.metrics.filter((m) => TRACKED_METRICS.has(m.code));
   const metricById = new Map(tracked.map((m) => [m.id, m]));
   const series = groupBy(
-    input.points.filter((p) => metricById.has(p[1]) && players.has(p[0])),
+    input.points.filter((p) => metricById.has(p[1]) && players.has(p[0]) && !(withCmjBase.has(p[0]) && metricById.get(p[1])?.code === "cmj_height_cm")),
     (p) => `${p[0]}|${p[1]}`,
   );
   for (const [key, pts] of series) {

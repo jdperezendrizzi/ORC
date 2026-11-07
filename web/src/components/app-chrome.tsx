@@ -58,6 +58,12 @@ const icons = {
     </>
   ),
   close: <path d="M6 6l12 12M18 6 6 18" />,
+  stopwatch: (
+    <>
+      <circle cx="12" cy="13" r="7.5" />
+      <path d="M12 13V9M10 2.5h4M18.5 6.5l1.5-1.5" />
+    </>
+  ),
   guide: (
     <>
       <circle cx="12" cy="12" r="9" />
@@ -102,6 +108,13 @@ export function navItems({ canLoad, isAdmin = false, isStaff = true, modules }: 
       label: "Evaluaciones",
       icon: <Icon>{icons.load}</Icon>,
       primary: true,
+      show: canLoad && (!modules || canEdit(modules, "performance")),
+    },
+    {
+      href: "/tests",
+      label: "Tests de cancha",
+      icon: <Icon>{icons.stopwatch}</Icon>,
+      primary: false,
       show: canLoad && (!modules || canEdit(modules, "performance")),
     },
     { href: "/bienestar", label: "Bienestar", icon: <Icon>{icons.wellness}</Icon>, primary: false, show: view("wellness") },
@@ -261,6 +274,12 @@ export function LogoutButton({ className = "" }: { className?: string }) {
       return;
     }
     await clearLocalData();
+    try {
+      // Corrida del 30-15 IFT en curso: se corta y se borra.
+      window.localStorage.removeItem("orc-ift-run");
+    } catch {
+      /* sin storage */
+    }
     // Al SW activo (puede no controlar todavía esta página).
     const reg = await navigator.serviceWorker?.getRegistration().catch(() => undefined);
     (reg?.active ?? navigator.serviceWorker?.controller)?.postMessage({ type: "CLEAR_PAGES" });

@@ -16,6 +16,9 @@ import type {
   Season,
   TestMetric,
   TestType,
+  TestProtocol,
+  TestExclusion,
+  MetricRange,
 } from "../types";
 import { cacheGet, cachePut } from "./db";
 import { fetchAll } from "../fetch-all";
@@ -34,6 +37,11 @@ export interface FieldData {
   consents: Consent[];
   /** Niveles por módulo (puede faltar en datos guardados por versiones anteriores). */
   modules?: Modules;
+  /** Tests de cancha (pueden faltar en datos guardados por versiones anteriores). */
+  protocols?: TestProtocol[];
+  exclusions?: TestExclusion[];
+  ranges?: MetricRange[];
+  cmjWeeklyCodes?: string[];
 }
 
 /** Niveles por módulo del usuario de la cancha (con respaldo por rol). */
@@ -99,13 +107,13 @@ export async function refreshFieldData(supabase: SupabaseClient): Promise<FieldD
   categories.sort((a, b) => a.sort_order - b.sort_order);
   const categoryIds = categories.map((c) => c.id);
 
-  const [positions, testTypes, metrics, rosterRows, sessions, consents] = await Promise.all([
+  const [positions, testTypes, metrics, rosterRows, sessions, consents, protocols, exclusions, ranges, weekly] = await Promise.all([
     supabase.from("positions").select("id, name, short_name, unit, line").order("id"),
     supabase.from("test_types").select("id, code, name, domain, protocol, sort_order").eq("active", true).order("sort_order"),
     supabase
       .from("test_metrics")
       .select(
-        "id, test_type_id, code, name, unit, higher_is_better, decimals, min_valid, max_valid, is_primary, best_of, derivation, required_consent, sort_order",
+        "id, test_type_id, code, name, unit, higher_is_better, decimals, min_valid, max_valid, is_primary, best_of, derivation, required_consent, sort_order, individual_only",
       )
       .eq("active", true)
       .order("sort_order"),
@@ -124,6 +132,10 @@ export async function refreshFieldData(supabase: SupabaseClient): Promise<FieldD
       .is("deleted_at", null)
       .order("session_date", { ascending: false }),
     supabase.from("consents").select("player_id, consent_type, granted_at, revoked_at").is("revoked_at", null),
+    supabase.from("test_protocols").select("id, test_type_id, version, params, notes").eq("active", true),
+    supabase.from("category_test_exclusions").select("category_id, test_type_id, reason"),
+    supabase.from("test_metric_ranges").select("metric_id, sex, warn_min, warn_max"),
+    supabase.from("club_settings").select("value").eq("key", "cmj_weekly").maybeSingle(),
   ]);
 
   type RosterRow = {
@@ -159,6 +171,10 @@ export async function refreshFieldData(supabase: SupabaseClient): Promise<FieldD
     sessions: must(sessions, "sesiones") as EvaluationSession[],
     consents: must(consents, "consentimientos") as Consent[],
     modules,
+    protocols: (protocols.data ?? []) as TestProtocol[],
+    exclusions: (exclusions.data ?? []) as TestExclusion[],
+    ranges: ((ranges.data ?? []) as MetricRange[]).map((r) => ({ ...r, warn_min: num(r.warn_min), warn_max: num(r.warn_max) })),
+    cmjWeeklyCodes: ((weekly.data?.value as { category_codes?: string[] } | null)?.category_codes ?? ["M17", "M19"]) as string[],
   };
   await cachePut(FIELD_KEY, data);
   return data;

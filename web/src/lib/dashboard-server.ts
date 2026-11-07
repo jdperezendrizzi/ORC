@@ -23,7 +23,7 @@ export async function loadDashboard(supabase: SupabaseClient, season: Season, ca
     ),
     supabase
       .from("test_metrics")
-      .select("id, code, name, unit, decimals, higher_is_better, sort_order, test_type:test_types(domain, sort_order)")
+      .select("id, code, name, unit, decimals, higher_is_better, sort_order, individual_only, test_type:test_types(domain, sort_order)")
       .eq("active", true),
     supabase.from("positions").select("id, short_name, unit"),
     fetchAll<{ player_id: string; metric_id: string; session_date: string; value: number }>(
@@ -55,7 +55,8 @@ export async function loadDashboard(supabase: SupabaseClient, season: Season, ca
 
   type M = { id: string; code: string; name: string; unit: string; decimals: number; higher_is_better: boolean; sort_order: number; test_type: { domain: string; sort_order: number } };
   const metrics: DashMetric[] = ((metricsRes.data ?? []) as unknown as M[])
-    .filter((m) => !HIDDEN.has(m.code))
+    // Las métricas "individuales" (reacción) no van en paneles de equipo ni rankings.
+    .filter((m) => !HIDDEN.has(m.code) && !(m as { individual_only?: boolean }).individual_only)
     .sort((a, b) => a.test_type.sort_order - b.test_type.sort_order || a.sort_order - b.sort_order)
     .map((m) => ({
       id: m.id,

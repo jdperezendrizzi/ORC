@@ -24,7 +24,17 @@ export type Uploader = (
   rows: Record<string, unknown>[],
 ) => Promise<{ error: UpsertError | null }>;
 
-const TABLE_ORDER: OutboxTable[] = ["evaluation_sessions", "results", "wellness_logs", "attendance", "injuries", "objective_checks"];
+const TABLE_ORDER: OutboxTable[] = [
+  "evaluation_sessions",
+  "test_devices",
+  "results",
+  "test_attempts",
+  "test_attempt_voids",
+  "wellness_logs",
+  "attendance",
+  "injuries",
+  "objective_checks",
+];
 const BATCH_SIZE = 200;
 
 export interface SyncReport {
@@ -110,6 +120,12 @@ export function friendlyError(error: UpsertError): string {
   const msg = error.message ?? "";
   if (error.hint === "consent_required" || /consentimiento/i.test(msg)) {
     return "Falta el consentimiento firmado. Avisale al admin del club.";
+  }
+  if (error.hint === "invalid_inputs" || error.hint === "not_in_battery") {
+    return msg;
+  }
+  if (/image_use/.test(msg)) {
+    return "Falta el consentimiento de imagen: no se puede usar video con este jugador.";
   }
   if (error.hint === "out_of_range" || /fuera de rango/i.test(msg)) {
     return msg.replace(/^.*?Valor/, "Valor");
