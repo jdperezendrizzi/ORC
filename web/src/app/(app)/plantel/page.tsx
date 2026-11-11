@@ -110,9 +110,16 @@ export default async function PlantelPage() {
 
   return (
     <div className="space-y-4">
-      <header>
-        <p className="text-sm text-orc-muted">Temporada {season.name}</p>
-        <h1 className="text-2xl font-black">Plantel</h1>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm text-orc-muted">Temporada {season.name}</p>
+          <h1 className="text-2xl font-black">Plantel</h1>
+        </div>
+        {categories.length > 0 && (
+          <a href={`/plantel/estado?categoria=${categories[0].id}`} className="btn-dark h-11">
+            Estado del equipo · compartir
+          </a>
+        )}
       </header>
       {categories.length === 0 ? (
         <p className="card text-sm">No tenés categorías asignadas. Pedíselo al admin.</p>
