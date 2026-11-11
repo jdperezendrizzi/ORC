@@ -72,9 +72,30 @@ describe("Estado del equipo", () => {
   it("asistencia de los últimos 30 días, separada por tipo", () => {
     expect(r.attendance).toMatchObject({ pct: 67, practicePct: 67, matchPct: 67, sessions: 2 });
     expect(r.attendance?.low).toEqual([{ name: "Benítez, Ignacio", pct: 0 }]);
+    // 8/11 es sábado (semana del 2/11) y 10/11 es lunes (semana del 9/11)
+    expect(r.attendance?.weeks).toEqual([
+      { weekStart: "2026-11-02", practicePct: null, matchPct: 67 },
+      { weekStart: "2026-11-09", practicePct: 67, matchPct: null },
+    ]);
   });
   it("tests: promedio del último testeo y cambio (menos es mejor en sprint)", () => {
-    expect(r.tests).toEqual([{ label: "Backs · Sprint 10 m", value: "1,85", unit: "s", change: "-0,10", improved: true, n: 2, date: "2026-10-20" }]);
+    expect(r.tests).toEqual([
+      {
+        label: "Backs · Sprint 10 m",
+        value: "1,85",
+        unit: "s",
+        decimals: 2,
+        higherIsBetter: false,
+        change: "-0,10",
+        improved: true,
+        n: 2,
+        date: "2026-10-20",
+        series: [
+          { date: "2026-09-01", value: 1.95 },
+          { date: "2026-10-20", value: 1.85 },
+        ],
+      },
+    ]);
   });
   it("bienestar de los últimos 7 días", () => {
     expect(r.wellness).toEqual({ avg: 17, logs: 2, players: 2 });

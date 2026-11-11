@@ -17,6 +17,8 @@ export async function buildTeamPdf(r: TeamReport, crestDataUrl: string | null): 
   const MUTED: [number, number, number] = [96, 90, 85];
   const BAD: [number, number, number] = [185, 28, 28];
   const GOOD: [number, number, number] = [21, 128, 61];
+  const BLUE: [number, number, number] = [3, 105, 161];
+  const GRID: [number, number, number] = [217, 212, 207];
 
   const header = () => {
     doc.setFillColor(...BLACK);
@@ -45,7 +47,7 @@ export async function buildTeamPdf(r: TeamReport, crestDataUrl: string | null): 
     }
   };
   const title = (t: string) => {
-    ensure(14);
+    ensure(22); // el título nunca queda solo al pie de la página
     y += 3;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12.5);
@@ -65,6 +67,108 @@ export async function buildTeamPdf(r: TeamReport, crestDataUrl: string | null): 
     doc.text(lines, M, y);
     y += lines.length * 4.8;
   };
+
+  function attendanceChart(weeks: NonNullable<TeamReport["attendance"]>["weeks"]) {
+    if (weeks.length === 0) return;
+    const chartH = 32;
+    ensure(chartH + 16);
+    const top = y + 3;
+    const base = top + chartH;
+    const left = M + 8;
+    const width = W - M - left;
+    doc.setDrawColor(...GRID);
+    doc.setLineWidth(0.2);
+    doc.setFontSize(7);
+    doc.setTextColor(...MUTED);
+    for (const v of [0, 50, 100]) {
+      const gy = base - (v / 100) * chartH;
+      doc.line(left, gy, W - M, gy);
+      doc.text(`${v}`, left - 1.5, gy + 1, { align: "right" });
+    }
+    const slot = width / weeks.length;
+    const barW = Math.min(9, (slot * 0.8) / 2);
+    weeks.forEach((w, i) => {
+      const cx = left + slot * i + slot / 2;
+      ([["p", w.practicePct, ORANGE], ["m", w.matchPct, BLUE]] as const).forEach(([, pct, color], j) => {
+        if (pct === null) return;
+        const h = Math.max(0.6, (pct / 100) * chartH);
+        const bx = cx - barW + j * barW;
+        doc.setFillColor(...color);
+        doc.rect(bx + 0.3, base - h, barW - 0.6, h, "F");
+        doc.setFontSize(6.5);
+        doc.setTextColor(...(pct < LOW_PCT ? BAD : BLACK));
+        doc.text(String(pct), bx + barW / 2, base - h - 1, { align: "center" });
+      });
+      doc.setFontSize(6.5);
+      doc.setTextColor(...MUTED);
+      doc.text(`sem. ${dm(w.weekStart)}`, cx, base + 4, { align: "center" });
+    });
+    // Leyenda
+    doc.setFontSize(7.5);
+    doc.setFillColor(...ORANGE);
+    doc.rect(M, base + 7, 3, 3, "F");
+    doc.setTextColor(...MUTED);
+    doc.text("Prácticas", M + 4.5, base + 9.5);
+    doc.setFillColor(...BLUE);
+    doc.rect(M + 22, base + 7, 3, 3, "F");
+    doc.text("Partidos", M + 26.5, base + 9.5);
+    y = base + 14;
+  }
+
+  function lineChart(t: NonNullable<TeamReport["tests"]>[number], x: number, top: number, w: number, h: number) {
+    doc.setDrawColor(...GRID);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, top, w, h, 2, 2, "S");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...BLACK);
+    doc.text(t.label, x + 3, top + 5);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    const color = t.improved === true ? GOOD : t.improved === false ? BAD : MUTED;
+    doc.setTextColor(...color);
+    const last = `${t.value} ${t.unit}${t.change ? ` (${t.change})` : ""}`;
+    doc.text(last, x + w - 3, top + 5, { align: "right" });
+    doc.setFontSize(6.5);
+    doc.setTextColor(...MUTED);
+    doc.text(t.higherIsBetter ? "más es mejor" : "menos es mejor", x + 3, top + 9);
+    const pts = t.series;
+    const pl = x + 12;
+    const pr = x + w - 4;
+    const pt = top + 13;
+    const pb = top + h - 7;
+    if (pts.length === 0) return;
+    const vals = pts.map((p) => p.value);
+    let lo = Math.min(...vals);
+    let hi = Math.max(...vals);
+    if (hi - lo < 1e-9) {
+      lo -= Math.abs(lo) * 0.05 || 1;
+      hi += Math.abs(hi) * 0.05 || 1;
+    }
+    const pad = (hi - lo) * 0.15;
+    lo -= pad;
+    hi += pad;
+    const X = (i: number) => (pts.length === 1 ? (pl + pr) / 2 : pl + ((pr - pl) * i) / (pts.length - 1));
+    const Y = (v: number) => pb - ((v - lo) / (hi - lo)) * (pb - pt);
+    doc.setFontSize(6.5);
+    doc.setTextColor(...MUTED);
+    doc.setDrawColor(...GRID);
+    for (const v of [lo + pad, hi - pad]) {
+      doc.line(pl, Y(v), pr, Y(v));
+      doc.text(formatValue(v, t.decimals), pl - 1.5, Y(v) + 1, { align: "right" });
+    }
+    doc.setDrawColor(...ORANGE);
+    doc.setLineWidth(0.7);
+    for (let i = 1; i < pts.length; i++) doc.line(X(i - 1), Y(pts[i - 1].value), X(i), Y(pts[i].value));
+    doc.setFillColor(...ORANGE);
+    pts.forEach((p, i) => doc.circle(X(i), Y(p.value), 0.9, "F"));
+    doc.setTextColor(...MUTED);
+    const step = Math.max(1, Math.ceil(pts.length / 6));
+    pts.forEach((p, i) => {
+      if (i % step === 0 || i === pts.length - 1) doc.text(dm(p.date), X(i), pb + 4, { align: "center" });
+    });
+
+  }
 
   // Números grandes
   const big: [string, string][] = [[String(r.total), "jugadores"]];
@@ -100,15 +204,21 @@ export async function buildTeamPdf(r: TeamReport, crestDataUrl: string | null): 
     else {
       line(`${r.attendance.pct ?? "—"} % en ${r.attendance.sessions} días · prácticas ${r.attendance.practicePct ?? "—"} % · partidos ${r.attendance.matchPct ?? "—"} %`);
       if (r.attendance.low.length) line(`Menos de ${LOW_PCT} %: ${r.attendance.low.map((x) => `${x.name} (${x.pct} %)`).join(", ")}`, BAD);
+      attendanceChart(r.attendance.weeks);
     }
   }
   if (r.tests) {
     title("Tests (promedio del último testeo)");
     if (r.tests.length === 0) line("Sin tests en la temporada.", MUTED);
-    for (const t of r.tests) {
-      const ch = t.change ? ` · ${t.change} vs. el anterior` : "";
-      line(`• ${t.label}: ${t.value} ${t.unit}${ch} (${t.n} jugadores${t.date ? `, ${dm(t.date)}` : ""})`, t.improved === true ? GOOD : t.improved === false ? BAD : BLACK);
-    }
+    // Dos gráficos por fila: evolución del promedio del grupo en la temporada
+    const boxW = (W - 2 * M - 6) / 2;
+    const boxH = 44;
+    r.tests.forEach((t, k) => {
+      if (k % 2 === 0) ensure(boxH + 4);
+      const x = M + (k % 2) * (boxW + 6);
+      lineChart(t, x, y, boxW, boxH);
+      if (k % 2 === 1 || k === r.tests!.length - 1) y += boxH + 5;
+    });
   }
   if (r.wellness) {
     title(`Bienestar (últimos ${WELLNESS_DAYS} días)`);

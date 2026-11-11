@@ -4,7 +4,8 @@
 import { alertKindLabel, type Alert } from "./alerts";
 import { attendancePct, ratesByPlayer, type AttendanceRow } from "./attendance";
 import { LOW_PCT } from "./attendance-report";
-import { highlight, type DashboardData, type DashPlayer } from "./dashboard";
+import { highlight, teamEvolution, type DashboardData, type DashPlayer } from "./dashboard";
+import { weekStart } from "./alerts";
 import { injuryStatusLabel } from "./labels";
 import { formatValue } from "./validation";
 
@@ -43,9 +44,29 @@ export interface TeamReport {
   available: number | null;
   injured: { name: string; status: string; back: string | null }[] | null;
   noConsent: number | null;
-  attendance: { pct: number | null; practicePct: number | null; matchPct: number | null; sessions: number; low: { name: string; pct: number }[] } | null;
+  attendance: {
+    pct: number | null;
+    practicePct: number | null;
+    matchPct: number | null;
+    sessions: number;
+    low: { name: string; pct: number }[];
+    /** Para el gráfico: semana a semana (desde el lunes). */
+    weeks: { weekStart: string; practicePct: number | null; matchPct: number | null }[];
+  } | null;
   alerts: { label: string; name: string; detail: string; severity: string }[] | null;
-  tests: { label: string; value: string; unit: string; change: string | null; improved: boolean | null; n: number; date: string | null }[] | null;
+  tests: {
+    label: string;
+    value: string;
+    unit: string;
+    decimals: number;
+    higherIsBetter: boolean;
+    change: string | null;
+    improved: boolean | null;
+    n: number;
+    date: string | null;
+    /** Para el gráfico: promedio del grupo en cada testeo de la temporada. */
+    series: { date: string; value: number }[];
+  }[] | null;
   wellness: { avg: number | null; logs: number; players: number } | null;
 }
 
@@ -78,6 +99,14 @@ export function buildTeamReport(i: TeamReportInput): TeamReport {
         .filter(([, v]) => v.pct !== null && v.pct < LOW_PCT)
         .map(([id, v]) => ({ name: names.get(id) ?? "—", pct: v.pct as number }))
         .sort((a, b) => a.pct - b.pct),
+      weeks: [...new Set(rows.map((r) => weekStart(r.att_date)))].sort().map((w) => {
+        const wk = rows.filter((r) => weekStart(r.att_date) === w);
+        return {
+          weekStart: w,
+          practicePct: attendancePct(wk.filter((r) => r.kind === "practice")),
+          matchPct: attendancePct(wk.filter((r) => r.kind === "match")),
+        };
+      }),
     };
   }
 
@@ -102,6 +131,11 @@ export function buildTeamReport(i: TeamReportInput): TeamReport {
         label: t.label,
         value: formatValue(h.value, m.decimals),
         unit: m.unit,
+        decimals: m.decimals,
+        higherIsBetter: m.higherIsBetter,
+        series: teamEvolution(d, m, group)
+          .filter((x) => x.all !== null)
+          .map((x) => ({ date: x.date, value: x.all as number })),
         change: h.delta === null ? null : `${h.delta > 0 ? "+" : ""}${formatValue(h.delta, m.decimals)}`,
         improved: h.improved,
         n: h.n,

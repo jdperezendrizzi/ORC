@@ -13,6 +13,7 @@ import { getViewer, getViewerCategories, isStaff } from "@/lib/server-data";
 import { ATTENDANCE_DAYS, buildTeamReport, teamReportText, WELLNESS_DAYS } from "@/lib/team-report";
 import { clubToday, formatValue } from "@/lib/validation";
 import { TeamShare } from "./team-share";
+import { TeamDashboard } from "@/components/team-dashboard";
 
 export const metadata: Metadata = { title: "Estado del equipo" };
 export const dynamic = "force-dynamic";
@@ -184,6 +185,7 @@ export default async function TeamStatePage({ searchParams }: { searchParams: Pr
                   <span aria-hidden>⚠ </span>Menos de {LOW_PCT} %: {report.attendance.low.map((x) => `${x.name} (${x.pct} %)`).join(", ")}
                 </p>
               )}
+              <WeekBars weeks={report.attendance.weeks} />
             </div>
           )}
         </Section>
@@ -215,8 +217,54 @@ export default async function TeamStatePage({ searchParams }: { searchParams: Pr
         </Section>
       )}
 
+      {see.perf && dashboard && dashboard.points.length > 0 && <TeamDashboard data={dashboard} />}
+
       <TeamShare report={report} text={text} categoryId={category.id} canShare={canEdit(modules, "sharing")} />
     </div>
+  );
+}
+
+/** Asistencia semana a semana: prácticas (naranja) y partidos (azul). */
+function WeekBars({ weeks }: { weeks: { weekStart: string; practicePct: number | null; matchPct: number | null }[] }) {
+  if (weeks.length === 0) return null;
+  return (
+    <figure className="pt-2" aria-label="Asistencia por semana">
+      <ul className="flex h-36 items-end gap-3">
+        {weeks.map((w) => (
+          <li key={w.weekStart} className="flex h-full min-w-12 flex-1 flex-col items-center justify-end gap-1">
+            <div className="flex h-full w-full items-end justify-center gap-0.5">
+              {(
+                [
+                  ["Prácticas", w.practicePct, "bg-orc-orange"],
+                  ["Partidos", w.matchPct, "bg-sky-700 dark:bg-sky-400"],
+                ] as const
+              ).map(([label, pct, color]) =>
+                pct === null ? null : (
+                  <div key={label} className="flex h-full max-w-8 flex-1 flex-col items-center justify-end">
+                    <span className={`text-[10px] font-semibold tabular-nums ${pct < LOW_PCT ? "text-red-700 dark:text-red-400" : ""}`}>{pct}</span>
+                    <span
+                      className={`w-full rounded-t ${color}`}
+                      style={{ height: `${Math.max(3, pct * 0.85)}%` }}
+                      aria-label={`Semana del ${formatDate(w.weekStart)}, ${label}: ${pct} %`}
+                    />
+                  </div>
+                ),
+              )}
+            </div>
+            <span className="text-[10px] text-orc-muted">{formatDate(w.weekStart)}</span>
+          </li>
+        ))}
+      </ul>
+      <figcaption className="mt-1 flex gap-3 text-xs">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block size-3 rounded-sm bg-orc-orange" aria-hidden /> Prácticas
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block size-3 rounded-sm bg-sky-700 dark:bg-sky-400" aria-hidden /> Partidos
+        </span>
+        <span className="text-orc-muted">% por semana</span>
+      </figcaption>
+    </figure>
   );
 }
 
