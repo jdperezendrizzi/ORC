@@ -48,7 +48,14 @@ export default async function HomePage() {
   ]);
 
   // «Práctica de hoy»: para el profe, asistencia y objetivos del día por categoría
-  const showPractice = profile?.role === "coach" && canLoadResults(profile) && (canView(modules, "attendance") || canView(modules, "objectives"));
+  // Profe: sus categorías. Admin que además es profe de alguna: sólo esas.
+  let practiceCats = profile?.role === "coach" ? categories : [];
+  if (profile?.role === "admin") {
+    const { data: mine } = await supabase.from("coach_assignments").select("category_id").eq("profile_id", profile.id).eq("season_id", season.id);
+    const ids = new Set((mine ?? []).map((m) => m.category_id as string));
+    practiceCats = categories.filter((c) => ids.has(c.id));
+  }
+  const showPractice = practiceCats.length > 0 && canLoadResults(profile) && (canView(modules, "attendance") || canView(modules, "objectives"));
   const today = clubToday();
   // Profe de infantiles: no hace tests físicos, la práctica de hoy va primero
   const infantile = await isInfantileCoach();
@@ -74,7 +81,7 @@ export default async function HomePage() {
       ])
     : [{ data: [] }, { data: [] }, [] as ObjectiveCheck[]];
   const practice = showPractice
-    ? categories.map((c) => {
+    ? practiceCats.map((c) => {
         const players = (rosterRes.data ?? []).filter((r) => r.category_id === c.id).length;
         const taken = new Set(((attToday.data ?? []) as { player_id: string; category_id: string }[]).filter((a) => a.category_id === c.id).map((a) => a.player_id)).size;
         const objs = ((objRes.data ?? []) as Objective[]).filter((o) => o.category_id === c.id);
