@@ -11,7 +11,7 @@
 // Para que /cargar y /bienestar funcionen sin señal hay que abrirlas una vez
 // con señal (quedan guardadas). La app las precarga después del login.
 
-const VERSION = "orc-v9";
+const VERSION = "orc-v10";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGES_CACHE = `${VERSION}-pages`;
 const PRECACHE_PAGES = ["/offline"];
@@ -20,6 +20,7 @@ const OFFLINE_PAGES = [
   "/cargar",
   "/bienestar",
   "/practica",
+  "/objetivos",
   "/lesiones/nueva",
   "/guia",
   "/tests",

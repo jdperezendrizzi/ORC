@@ -14,12 +14,12 @@ type Tab = "asistencia" | "objetivos";
 const CAN_USE = ["admin", "coach"];
 
 /** Asistencia: tomar asistencia (al empezar) y objetivos (al terminar). Funciona sin señal. */
-export function PracticeScreen() {
+export function PracticeScreen({ only }: { only?: "objetivos" } = {}) {
   const { data, loading } = useFieldData();
   const { online } = useSync();
   const params = useSearchParams();
   const today = clubToday();
-  const [tab, setTab] = useState<Tab>(params.get("tab") === "objetivos" ? "objetivos" : "asistencia");
+  const [tab, setTab] = useState<Tab>(only === "objetivos" || params.get("tab") === "objetivos" ? "objetivos" : "asistencia");
   const [categoryId, setCategoryId] = useState(params.get("categoria") ?? "");
   const [date, setDate] = useState(today);
 
@@ -30,10 +30,10 @@ export function PracticeScreen() {
   // Mantener la URL al día sin navegar (así funciona sin señal).
   useEffect(() => {
     const u = new URL(window.location.href);
-    u.searchParams.set("tab", tab);
+    if (!only) u.searchParams.set("tab", tab);
     if (categoryId) u.searchParams.set("categoria", categoryId);
     window.history.replaceState(null, "", u);
-  }, [tab, categoryId]);
+  }, [tab, categoryId, only]);
 
   if (!data) {
     return (
@@ -44,8 +44,8 @@ export function PracticeScreen() {
   }
   if (!CAN_USE.includes(data.profile.role)) return <p className="card">La asistencia y los objetivos los cargan los entrenadores.</p>;
   const mods = fieldModules(data);
-  const tabs = (["asistencia", "objetivos"] as Tab[]).filter((t) => canView(mods, t === "asistencia" ? "attendance" : "objectives"));
-  if (tabs.length === 0) return <p className="card">No tenés habilitados la asistencia ni los objetivos.</p>;
+  const tabs = (only ? [only] : (["asistencia", "objetivos"] as Tab[])).filter((t) => canView(mods, t === "asistencia" ? "attendance" : "objectives"));
+  if (tabs.length === 0) return <p className="card">No tenés habilitados {only ? "los objetivos" : "la asistencia ni los objetivos"}.</p>;
   const current = tabs.includes(tab) ? tab : tabs[0];
   const readOnly = !canEdit(mods, current === "asistencia" ? "attendance" : "objectives");
 
@@ -53,9 +53,9 @@ export function PracticeScreen() {
     <div className="space-y-4">
       <header className="space-y-3">
         <div>
-          <h1 className="text-2xl font-black">Asistencia</h1>
+          <h1 className="text-2xl font-black">{only ? "Objetivos" : "Asistencia"}</h1>
           <p className="text-sm text-orc-muted">
-            Al empezar, la asistencia. Al terminar, los objetivos.
+            {only ? "Al terminar la práctica, tachá lo que el equipo cumplió." : "Al empezar, la asistencia. Al terminar, los objetivos."}
             {!online && " Sin señal: se guarda en el celular y se sube sola."}
           </p>
         </div>
@@ -75,6 +75,7 @@ export function PracticeScreen() {
             <input type="date" className="field-input" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} />
           </label>
         </div>
+        {!only && (
         <div className={`grid gap-1 rounded-xl bg-orc-chip p-1 ${tabs.length > 1 ? "grid-cols-2" : "grid-cols-1"}`} role="tablist">
           {tabs.map((t) => (
             <button
@@ -89,6 +90,7 @@ export function PracticeScreen() {
             </button>
           ))}
         </div>
+        )}
       </header>
 
       {readOnly && <p className="rounded-lg tone-amber px-3 py-2 text-sm">Sólo para ver: no tenés habilitada la carga de {current === "asistencia" ? "asistencia" : "objetivos"}.</p>}

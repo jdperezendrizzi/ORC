@@ -3,7 +3,7 @@ import { AccountMenu, BottomNav, LogoutButton, PrecacheFieldPages, SyncBadge, To
 import { SyncProvider } from "@/components/sync-provider";
 import { NavProgress } from "@/components/nav-progress";
 import { Suspense } from "react";
-import { canLoadResults, getViewer, isStaff, roleLabel } from "@/lib/server-data";
+import { canLoadResults, getViewer, isInfantileCoach, isStaff, roleLabel } from "@/lib/server-data";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, modules } = await getViewer();
@@ -11,6 +11,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (profile && ["player", "guardian"].includes(profile.role)) redirect("/mi-jugador");
   const canLoad = canLoadResults(profile);
   const isAdmin = !!profile?.active && profile.role === "admin";
+  const infantile = await isInfantileCoach();
 
   return (
     <SyncProvider>
@@ -27,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </span>
           </a>
           <div className="ml-4 flex-1">
-            <TopNav canLoad={canLoad} isAdmin={isAdmin} isStaff={isStaff(profile)} modules={modules} />
+            <TopNav canLoad={canLoad} isAdmin={isAdmin} isStaff={isStaff(profile)} modules={modules} infantile={infantile} />
           </div>
           <SyncBadge />
           {profile && <AccountMenu name={profile.full_name} role={roleLabel[profile.role] ?? ""} />}
@@ -50,7 +51,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       ) : (
         <>
           <main className="mx-auto max-w-5xl px-4 pb-28 pt-4 md:pb-10">{children}</main>
-          <BottomNav canLoad={canLoad} isAdmin={isAdmin} isStaff={isStaff(profile)} modules={modules} />
+          <BottomNav canLoad={canLoad} isAdmin={isAdmin} isStaff={isStaff(profile)} modules={modules} infantile={infantile} />
           <PrecacheFieldPages />
         </>
       )}

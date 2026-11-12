@@ -36,7 +36,7 @@ export const getViewer = cache(async () => {
 });
 
 /** Categorías que ve el usuario (coach: asignadas en la temporada; admin/medical: todas). */
-export async function getViewerCategories(): Promise<Category[]> {
+export const getViewerCategories = cache(async (): Promise<Category[]> => {
   const { supabase, profile, season } = await getViewer();
   if (!profile?.active || !season) return [];
 
@@ -56,6 +56,32 @@ export async function getViewerCategories(): Promise<Category[]> {
     .eq("active", true)
     .order("sort_order");
   return (data ?? []) as Category[];
+});
+
+/**
+ * Categorías con objetivos DEL EQUIPO (infantiles): las anteriores a la
+ * categoría desde la que los objetivos son por jugador (ajuste del club).
+ */
+export const getTeamObjectiveCategoryIds = cache(async (): Promise<Set<string>> => {
+  const { supabase } = await getViewer();
+  const categories = await getViewerCategories();
+  const { data } = await supabase.from("club_settings").select("value").eq("key", "player_objectives_from").maybeSingle();
+  const fromId = (data?.value as { category_id?: string } | null)?.category_id ?? null;
+  let fromOrder: number | null = null;
+  if (fromId) {
+    const { data: c } = await supabase.from("categories").select("sort_order").eq("id", fromId).maybeSingle();
+    fromOrder = (c?.sort_order as number | undefined) ?? null;
+  }
+  return new Set(categories.filter((c) => fromOrder === null || c.sort_order < fromOrder).map((c) => c.id));
+});
+
+/** Profe que sólo tiene categorías infantiles (objetivos del equipo): su barra prioriza «Objetivos». */
+export async function isInfantileCoach(): Promise<boolean> {
+  const { profile } = await getViewer();
+  if (profile?.role !== "coach" || !profile.active) return false;
+  const categories = await getViewerCategories();
+  const team = await getTeamObjectiveCategoryIds();
+  return categories.length > 0 && categories.every((c) => team.has(c.id));
 }
 
 export const canLoadResults = (p: Profile | null) => !!p?.active && (p.role === "admin" || p.role === "coach");

@@ -4,7 +4,11 @@ import { loadDashboard } from "@/lib/dashboard-server";
 import { AlertsList } from "@/components/alerts-list";
 import { computeAlerts } from "@/lib/alerts";
 import { loadAlertInput } from "@/lib/alerts-server";
-import { canLoadResults, getViewer, getViewerCategories, isStaff } from "@/lib/server-data";
+import { canLoadResults, getTeamObjectiveCategoryIds, getViewer, getViewerCategories, isInfantileCoach, isStaff } from "@/lib/server-data";
+import { progress } from "@/lib/objectives";
+import type { Objective, ObjectiveCheck } from "@/lib/types";
+import { fetchAll } from "@/lib/fetch-all";
+import { clubToday } from "@/lib/validation";
 import { formatDate, injuryStatusLabel, injuryStatusTone, sessionTypeLabel } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +47,51 @@ export default async function HomePage() {
       .limit(6),
   ]);
 
+  // «Práctica de hoy»: para el profe, asistencia y objetivos del día por categoría
+  const showPractice = profile?.role === "coach" && canLoadResults(profile) && (canView(modules, "attendance") || canView(modules, "objectives"));
+  const today = clubToday();
+  // Profe de infantiles: no hace tests físicos, la práctica de hoy va primero
+  const infantile = await isInfantileCoach();
+  const teamCats = showPractice ? await getTeamObjectiveCategoryIds() : new Set<string>();
+  const [attToday, objRes, objChecks] = showPractice
+    ? await Promise.all([
+        canView(modules, "attendance")
+          ? supabase.from("attendance").select("player_id, category_id").eq("att_date", today).in("category_id", categoryIds)
+          : Promise.resolve({ data: [] as { player_id: string; category_id: string }[] }),
+        canView(modules, "objectives")
+          ? supabase.from("objectives").select("id, category_id, scope, area, title, sort_order").eq("active", true).in("category_id", categoryIds)
+          : Promise.resolve({ data: [] as Objective[] }),
+        canView(modules, "objectives")
+          ? fetchAll<ObjectiveCheck>(
+              () =>
+                supabase
+                  .from("objective_checks")
+                  .select("id, objective_id, season_id, check_date, player_id, achieved, note")
+                  .eq("season_id", season.id)
+                  .order("id") as never,
+            )
+          : Promise.resolve([] as ObjectiveCheck[]),
+      ])
+    : [{ data: [] }, { data: [] }, [] as ObjectiveCheck[]];
+  const practice = showPractice
+    ? categories.map((c) => {
+        const players = (rosterRes.data ?? []).filter((r) => r.category_id === c.id).length;
+        const taken = new Set(((attToday.data ?? []) as { player_id: string; category_id: string }[]).filter((a) => a.category_id === c.id).map((a) => a.player_id)).size;
+        const objs = ((objRes.data ?? []) as Objective[]).filter((o) => o.category_id === c.id);
+        const ids = new Set(objs.map((o) => o.id));
+        const checks = (objChecks as ObjectiveCheck[]).filter((k) => ids.has(k.objective_id));
+        const markedToday = checks.some((k) => k.check_date === today);
+        return {
+          category: c,
+          players,
+          taken,
+          team: teamCats.has(c.id),
+          objectives: objs.length ? (teamCats.has(c.id) ? progress(objs, checks, today) : { done: 0, total: objs.length }) : null,
+          markedToday,
+        };
+      })
+    : [];
+
   const dashboard = await loadDashboard(supabase, season, categories);
   const showAlerts = isStaff(profile) && canView(modules, "insights");
   const alerts = showAlerts ? computeAlerts(await loadAlertInput(supabase, season, categories, dashboard)) : [];
@@ -70,8 +119,8 @@ export default async function HomePage() {
       </section>
 
       {canLoadResults(profile) && (canEdit(modules, "performance") || canEdit(modules, "wellness")) && (
-        <section className="grid grid-cols-2 gap-3">
-          {canEdit(modules, "performance") && (
+        <section className={`grid gap-3 ${canEdit(modules, "performance") && !infantile && canEdit(modules, "wellness") ? "grid-cols-2" : "grid-cols-1"}`}>
+          {canEdit(modules, "performance") && !infantile && (
             <a href="/cargar" className="btn-primary h-16 text-base">
               + Cargar evaluación
             </a>
@@ -81,6 +130,63 @@ export default async function HomePage() {
               Bienestar del día
             </a>
           )}
+        </section>
+      )}
+
+      {practice.length > 0 && (
+        <section className="space-y-2" aria-label="Práctica de hoy">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-orc-muted">Práctica de hoy</h2>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {practice.map((p) => (
+              <li key={p.category.id} className="card space-y-3">
+                <p className="font-bold">{p.category.name}</p>
+                {canView(modules, "attendance") && (
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm">
+                      {p.taken > 0 ? (
+                        <>
+                          <span className="chip tone-green mr-1 text-xs">✓ Tomada</span>
+                          Asistencia {p.taken} de {p.players}
+                        </>
+                      ) : (
+                        <>
+                          <span className="chip mr-1 text-xs">○ Pendiente</span>
+                          Asistencia
+                        </>
+                      )}
+                    </span>
+                    <a href={`/practica?tab=asistencia&categoria=${p.category.id}`} className={`${p.taken > 0 ? "btn-ghost" : "btn-dark"} h-10 shrink-0 text-sm`}>
+                      {p.taken > 0 ? "Ver" : "Tomar asistencia"}
+                    </a>
+                  </div>
+                )}
+                {canView(modules, "objectives") && p.objectives && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm">
+                        {p.markedToday ? <span className="chip tone-green mr-1 text-xs">✓ Marcados hoy</span> : <span className="chip mr-1 text-xs">○ Sin marcar hoy</span>}
+                        {p.team ? (
+                          <>
+                            Objetivos <b className="tabular-nums">{p.objectives.done}</b> de {p.objectives.total} logrados
+                          </>
+                        ) : (
+                          <>Objetivos por jugador ({p.objectives.total})</>
+                        )}
+                      </span>
+                      <a href={`/objetivos?categoria=${p.category.id}`} className={`${p.markedToday ? "btn-ghost" : "btn-primary"} h-10 shrink-0 text-sm`}>
+                        {p.team ? "Tachar objetivos" : "Ver objetivos"}
+                      </a>
+                    </div>
+                    {p.team && p.objectives.total > 0 && (
+                      <div className="h-2 overflow-hidden rounded-full bg-orc-chip" aria-hidden>
+                        <div className="h-full rounded-full bg-orc-orange" style={{ width: `${Math.round((p.objectives.done / p.objectives.total) * 100)}%` }} />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

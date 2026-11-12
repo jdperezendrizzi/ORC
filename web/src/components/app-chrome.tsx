@@ -58,6 +58,12 @@ const icons = {
     </>
   ),
   close: <path d="M6 6l12 12M18 6 6 18" />,
+  check: (
+    <>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="4" />
+      <path d="m8 12.5 2.8 2.8L16.5 9" />
+    </>
+  ),
   stopwatch: (
     <>
       <circle cx="12" cy="13" r="7.5" />
@@ -88,10 +94,12 @@ interface NavOptions {
   isAdmin?: boolean;
   isStaff?: boolean;
   modules?: Modules;
+  /** Profe de infantiles: «Objetivos» va en la barra y «Evaluaciones» pasa a «Más». */
+  infantile?: boolean;
 }
 
 /** Secciones del menú. Las «primary» van en la barra de abajo del celular; el resto, en «Más». */
-export function navItems({ canLoad, isAdmin = false, isStaff = true, modules }: NavOptions): (NavItem & { primary: boolean })[] {
+export function navItems({ canLoad, isAdmin = false, isStaff = true, modules, infantile = false }: NavOptions): (NavItem & { primary: boolean })[] {
   const view = (m: Parameters<typeof canView>[1]) => !modules || canView(modules, m);
   const items: (NavItem & { primary: boolean; show: boolean })[] = [
     { href: "/", label: "Inicio", icon: <Icon>{icons.home}</Icon>, primary: true, show: true },
@@ -104,10 +112,17 @@ export function navItems({ canLoad, isAdmin = false, isStaff = true, modules }: 
       show: canLoad && (view("attendance") || view("objectives")),
     },
     {
+      href: "/objetivos",
+      label: "Objetivos",
+      icon: <Icon>{icons.check}</Icon>,
+      primary: true,
+      show: infantile && canLoad && view("objectives"),
+    },
+    {
       href: "/cargar",
       label: "Evaluaciones",
       icon: <Icon>{icons.load}</Icon>,
-      primary: true,
+      primary: !infantile,
       show: canLoad && (!modules || canEdit(modules, "performance")),
     },
     {
