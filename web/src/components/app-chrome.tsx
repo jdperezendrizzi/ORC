@@ -146,21 +146,62 @@ function isActive(pathname: string, href: string) {
   return pathname.startsWith(href);
 }
 
+/** Menú de arriba (computadora): las secciones principales y el resto en «Más ▾». */
 export function TopNav(props: NavOptions) {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const all = navItems(props);
+  // En computadora hay lugar: «Admin» queda a la vista (lo usa seguido).
+  const inline = (i: { href: string; primary: boolean }) => i.primary || i.href === "/admin";
+  const primary = all.filter(inline);
+  const more = [...all.filter((i) => !inline(i)), { href: "/guia", label: "Guía: qué medimos", icon: <Icon>{icons.guide}</Icon>, primary: false }];
+  const moreActive = more.find((i) => isActive(pathname, i.href));
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !(e.target as HTMLElement).closest?.("[data-topnav-more]")) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", close);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", close);
+    };
+  }, [open]);
+
+  const cls = (active: boolean) =>
+    `whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold ${active ? "bg-orc-orange text-orc-black" : "text-white/80 hover:text-white"}`;
+
   return (
     <nav className="hidden items-center gap-1 md:flex" aria-label="Principal">
-      {navItems(props).map((i) => (
-        <a
-          key={i.href}
-          href={i.href}
-          className={`rounded-md px-3 py-2 text-sm font-semibold ${
-            isActive(pathname, i.href) ? "bg-orc-orange text-orc-black" : "text-white/80 hover:text-white"
-          }`}
-        >
+      {primary.map((i) => (
+        <a key={i.href} href={i.href} className={cls(isActive(pathname, i.href))} aria-current={isActive(pathname, i.href) ? "page" : undefined}>
           {i.label}
         </a>
       ))}
+      <div className="relative" data-topnav-more>
+        <button type="button" className={cls(!!moreActive)} aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen((o) => !o)}>
+          {moreActive ? moreActive.label : "Más"} <span aria-hidden>▾</span>
+        </button>
+        {open && (
+          <div role="menu" aria-label="Más secciones" className="absolute left-0 top-full z-40 mt-1 min-w-56 rounded-lg border border-white/10 bg-orc-black p-1 shadow-xl">
+            {more.map((i) => (
+              <a
+                key={i.href}
+                href={i.href}
+                role="menuitem"
+                className={`flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold ${
+                  isActive(pathname, i.href) ? "bg-orc-orange text-orc-black" : "text-white/85 hover:bg-white/10"
+                }`}
+              >
+                {i.icon}
+                {i.label}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
     </nav>
   );
 }

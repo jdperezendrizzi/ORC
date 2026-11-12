@@ -16,7 +16,20 @@ const STATUS: { value: AttendanceStatus; short: string; on: string }[] = [
 ];
 
 /** Tomar asistencia de la categoría en un día. Funciona sin señal. */
-export function AttendanceTab({ data, categoryId, date, readOnly = false }: { data: FieldData; categoryId: string; date: string; readOnly?: boolean }) {
+export function AttendanceTab({
+  data,
+  categoryId,
+  date,
+  readOnly = false,
+  onGoObjectives,
+}: {
+  data: FieldData;
+  categoryId: string;
+  date: string;
+  readOnly?: boolean;
+  /** Si viene, al completar la asistencia se ofrece pasar a los objetivos. */
+  onGoObjectives?: () => void;
+}) {
   const { items, lastSyncAt } = useSync();
   const [server, setServer] = useState<AttendanceRow[]>([]);
   const [kind, setKind] = useState<AttendanceKind>("practice");
@@ -110,6 +123,20 @@ export function AttendanceTab({ data, categoryId, date, readOnly = false }: { da
 
   if (players.length === 0) return <p className="card text-sm">No hay jugadores en esta categoría para la temporada.</p>;
 
+  // Asistencia completa → recordar el cierre de la práctica (tachar objetivos)
+  const nudge =
+    onGoObjectives && editable && unmarked === 0 ? (
+      <div className="card flex flex-wrap items-center justify-between gap-3 border-l-4 border-l-green-600" role="status">
+        <p className="text-sm">
+          <span aria-hidden>✓ </span>
+          <b>Asistencia completa.</b> Al terminar la práctica, ¿tachás los objetivos de hoy?
+        </p>
+        <button type="button" className="btn-primary h-10 shrink-0" onClick={onGoObjectives}>
+          Tachar objetivos
+        </button>
+      </div>
+    ) : null;
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -131,6 +158,8 @@ export function AttendanceTab({ data, categoryId, date, readOnly = false }: { da
           {unmarked === 0 ? "Todos marcados" : unmarked === players.length ? "Todos presentes" : `Resto presentes (${unmarked})`}
         </button>
       </div>
+
+      {nudge}
 
       <section className="card grid grid-cols-4 gap-1 py-3 text-center" aria-label="Totales">
         <Total n={c.present} label="presentes" tone="text-green-700 dark:text-green-400" />
@@ -176,6 +205,8 @@ export function AttendanceTab({ data, categoryId, date, readOnly = false }: { da
           );
         })}
       </ul>
+
+      {nudge}
       <a href={`/asistencia?cat=${categoryId}`} className="card flex items-center justify-between py-3 font-semibold text-orc-orange-strong hover:border-orc-orange">
         Ver resumen del mes y compartir
         <span aria-hidden>›</span>

@@ -96,7 +96,20 @@ export function PracticeScreen({ only }: { only?: "objetivos" } = {}) {
       {readOnly && <p className="rounded-lg tone-amber px-3 py-2 text-sm">Sólo para ver: no tenés habilitada la carga de {current === "asistencia" ? "asistencia" : "objetivos"}.</p>}
       {categoryId &&
         (current === "asistencia" ? (
-          <AttendanceTab data={data} categoryId={categoryId} date={date} readOnly={readOnly} />
+          <AttendanceTab
+            data={data}
+            categoryId={categoryId}
+            date={date}
+            readOnly={readOnly}
+            onGoObjectives={
+              tabs.includes("objetivos")
+                ? () => {
+                    setTab("objetivos");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                : undefined
+            }
+          />
         ) : (
           <ObjectivesChecklist data={data} categoryId={categoryId} date={date} readOnly={readOnly} />
         ))}
