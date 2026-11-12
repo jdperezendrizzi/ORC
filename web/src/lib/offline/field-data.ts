@@ -281,7 +281,7 @@ export async function refreshObjectives(supabase: SupabaseClient, seasonId: stri
       () =>
         supabase
           .from("objective_checks")
-          .select("id, objective_id, season_id, check_date, player_id, achieved, note")
+          .select("id, objective_id, season_id, check_date, player_id, achieved, status, note")
           .eq("season_id", seasonId)
           .order("id") as never,
     ),

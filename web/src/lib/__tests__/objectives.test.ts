@@ -27,7 +27,7 @@ describe("checklist de objetivos", () => {
   });
 
   it("avance: logrados sobre el total (sólo objetivos de equipo)", () => {
-    expect(progress([o("a"), o("b"), o("c"), o("p", "player")], checks, "2026-05-20")).toEqual({ done: 1, total: 3 });
+    expect(progress([o("a"), o("b"), o("c"), o("p", "player")], checks, "2026-05-20")).toEqual({ done: 1, inProgress: 0, total: 3 });
   });
 
   it("lo cargado sin señal pisa la marca guardada del mismo día", () => {
@@ -42,9 +42,21 @@ describe("checklist de objetivos", () => {
     });
     const objs = [o("x", "player"), o("y", "player"), o("t")];
     const ch = [pc("x", "p1", "2026-05-01", true), pc("y", "p1", "2026-05-01", true), pc("y", "p1", "2026-05-08", false), pc("x", "p2", "2026-05-01", true)];
-    expect(playerProgress(objs, ch, "p1", "2026-05-20")).toEqual({ done: 1, total: 2 });
-    expect(playerProgress(objs, ch, "p2", "2026-05-20")).toEqual({ done: 1, total: 2 });
+    expect(playerProgress(objs, ch, "p1", "2026-05-20")).toEqual({ done: 1, inProgress: 0, total: 2 });
+    expect(playerProgress(objs, ch, "p2", "2026-05-20")).toEqual({ done: 1, inProgress: 0, total: 2 });
     expect(objectiveState(ch, "x", "2026-05-20", "p1").achieved).toBe(true);
     expect(objectiveState(ch, "x", "2026-05-20", null).achieved).toBe(false); // las del equipo no se mezclan
+  });
+
+  it("tres estados: «Todavía no», «En progreso» y «Logrado» (y compatibilidad con sí/no)", () => {
+    const mk = (objective_id: string, check_date: string, status: "not_yet" | "in_progress" | "achieved"): ObjectiveCheck => ({
+      id: `${objective_id}-${check_date}`, objective_id, season_id: "s", check_date, player_id: null, achieved: status === "achieved", status, note: null,
+    });
+    const checks = [mk("a", "2026-05-01", "not_yet"), mk("a", "2026-05-08", "in_progress"), mk("b", "2026-05-08", "in_progress"), mk("b", "2026-05-15", "achieved"), c("d", "2026-05-15", true)];
+    expect(objectiveState(checks, "a", "2026-05-20").status).toBe("in_progress");
+    expect(objectiveState(checks, "b", "2026-05-20")).toMatchObject({ status: "achieved", achieved: true, firstAchieved: "2026-05-15" });
+    expect(objectiveState(checks, "d", "2026-05-20").status).toBe("achieved"); // marca vieja (sólo sí/no)
+    expect(objectiveState(checks, "e", "2026-05-20").status).toBeNull();
+    expect(progress([o("a"), o("b"), o("d"), o("e")], checks, "2026-05-20")).toEqual({ done: 2, inProgress: 1, total: 4 });
   });
 });

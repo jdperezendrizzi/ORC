@@ -250,5 +250,7 @@ export interface ObjectiveCheck {
   check_date: string;
   player_id: string | null;
   achieved: boolean;
+  /** Estado de la práctica (puede faltar en datos guardados por la versión anterior). */
+  status?: "not_yet" | "in_progress" | "achieved";
   note: string | null;
 }

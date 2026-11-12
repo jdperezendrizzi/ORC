@@ -69,7 +69,7 @@ export default async function PlantelPage() {
           () =>
             supabase
               .from("objective_checks")
-              .select("id, objective_id, season_id, check_date, player_id, achieved, note")
+              .select("id, objective_id, season_id, check_date, player_id, achieved, status, note")
               .eq("season_id", season.id)
               .order("id") as never,
         )

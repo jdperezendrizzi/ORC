@@ -55,7 +55,7 @@ export function PracticeScreen({ only }: { only?: "objetivos" } = {}) {
         <div>
           <h1 className="text-2xl font-black">{only ? "Objetivos" : "Asistencia"}</h1>
           <p className="text-sm text-orc-muted">
-            {only ? "Al terminar la práctica, tachá lo que el equipo cumplió." : "Al empezar, la asistencia. Al terminar, los objetivos."}
+            {only ? "Al terminar la práctica, marcá cómo le fue al equipo en cada objetivo." : "Al empezar, la asistencia. Al terminar, los objetivos."}
             {!online && " Sin señal: se guarda en el celular y se sube sola."}
           </p>
         </div>

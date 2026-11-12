@@ -73,7 +73,7 @@ export default async function HomePage() {
               () =>
                 supabase
                   .from("objective_checks")
-                  .select("id, objective_id, season_id, check_date, player_id, achieved, note")
+                  .select("id, objective_id, season_id, check_date, player_id, achieved, status, note")
                   .eq("season_id", season.id)
                   .order("id") as never,
             )
@@ -174,19 +174,23 @@ export default async function HomePage() {
                         {p.markedToday ? <span className="chip tone-green mr-1 text-xs">✓ Marcados hoy</span> : <span className="chip mr-1 text-xs">○ Sin marcar hoy</span>}
                         {p.team ? (
                           <>
-                            Objetivos <b className="tabular-nums">{p.objectives.done}</b> de {p.objectives.total} logrados
+                            Objetivos <b className="tabular-nums">{p.objectives.done}</b> logrados
+                            {"inProgress" in p.objectives && p.objectives.inProgress > 0 && <> · {p.objectives.inProgress} en progreso</>} · de {p.objectives.total}
                           </>
                         ) : (
                           <>Objetivos por jugador ({p.objectives.total})</>
                         )}
                       </span>
                       <a href={`/objetivos?categoria=${p.category.id}`} className={`${p.markedToday ? "btn-ghost" : "btn-primary"} h-10 shrink-0 text-sm`}>
-                        {p.team ? "Tachar objetivos" : "Ver objetivos"}
+                        {p.team ? "Marcar objetivos" : "Ver objetivos"}
                       </a>
                     </div>
                     {p.team && p.objectives.total > 0 && (
-                      <div className="h-2 overflow-hidden rounded-full bg-orc-chip" aria-hidden>
-                        <div className="h-full rounded-full bg-orc-orange" style={{ width: `${Math.round((p.objectives.done / p.objectives.total) * 100)}%` }} />
+                      <div className="flex h-2 overflow-hidden rounded-full bg-orc-chip" aria-hidden>
+                        <div className="h-full bg-orc-orange" style={{ width: `${(p.objectives.done / p.objectives.total) * 100}%` }} />
+                        {"inProgress" in p.objectives && (
+                          <div className="h-full bg-amber-400" style={{ width: `${(p.objectives.inProgress / p.objectives.total) * 100}%` }} />
+                        )}
                       </div>
                     )}
                   </div>

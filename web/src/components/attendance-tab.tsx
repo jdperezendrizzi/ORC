@@ -129,10 +129,10 @@ export function AttendanceTab({
       <div className="card flex flex-wrap items-center justify-between gap-3 border-l-4 border-l-green-600" role="status">
         <p className="text-sm">
           <span aria-hidden>✓ </span>
-          <b>Asistencia completa.</b> Al terminar la práctica, ¿tachás los objetivos de hoy?
+          <b>Asistencia completa.</b> Al terminar la práctica, ¿marcás los objetivos de hoy?
         </p>
         <button type="button" className="btn-primary h-10 shrink-0" onClick={onGoObjectives}>
-          Tachar objetivos
+          Marcar objetivos
         </button>
       </div>
     ) : null;

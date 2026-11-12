@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { ObjectiveStatusChip } from "@/components/objective-status-chip";
 import { methodLabel, type MeasureMethod } from "@/lib/field-tests/protocol";
 import { objectiveAreaLabel, objectiveState, playerProgress } from "@/lib/objectives";
 import type { Objective, ObjectiveCheck } from "@/lib/types";
@@ -181,7 +182,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
             .order("sort_order"),
           supabase
             .from("objective_checks")
-            .select("id, objective_id, season_id, check_date, player_id, achieved, note")
+            .select("id, objective_id, season_id, check_date, player_id, achieved, status, note")
             .eq("player_id", id)
             .eq("season_id", season.id),
         ])
@@ -472,13 +473,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
                     <span className="font-semibold">{o.title}</span>
                     <span className="block text-xs text-orc-muted">{objectiveAreaLabel[o.area]}</span>
                   </span>
-                  {st.achieved ? (
-                    <span className="chip tone-green shrink-0 text-xs">Logrado {st.firstAchieved ? formatDate(st.firstAchieved) : ""}</span>
-                  ) : st.lastDate ? (
-                    <span className="chip tone-amber shrink-0 text-xs">No logrado ({formatDate(st.lastDate)})</span>
-                  ) : (
-                    <span className="chip shrink-0 text-xs">Pendiente</span>
-                  )}
+                  <ObjectiveStatusChip status={st.status} date={st.lastDate} />
                 </li>
               );
             })}

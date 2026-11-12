@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { objectiveStatusIcon, objectiveStatusLabel, statusOf, type ObjectiveStatus } from "@/lib/objectives";
 import { ActionForm, InlineAction } from "@/components/action-form";
 import { Collapsible } from "@/components/collapsible";
 import { loadCatalog, requireAdmin } from "@/lib/admin";
@@ -34,14 +35,15 @@ export default async function AdminObjectives({ searchParams }: { searchParams: 
   const { data: checks } = season
     ? await supabase
         .from("objective_checks")
-        .select("objective_id, check_date, achieved")
+        .select("objective_id, check_date, achieved, status")
         .eq("season_id", season.id)
         .in("objective_id", list.map((o) => o.id).length ? list.map((o) => o.id) : ["00000000-0000-0000-0000-000000000000"])
     : { data: [] };
-  const last = new Map<string, { date: string; achieved: boolean }>();
+  const last = new Map<string, { date: string; status: ObjectiveStatus }>();
   for (const c of checks ?? []) {
     const prev = last.get(c.objective_id as string);
-    if (!prev || (c.check_date as string) > prev.date) last.set(c.objective_id as string, { date: c.check_date as string, achieved: !!c.achieved });
+    if (!prev || (c.check_date as string) > prev.date)
+      last.set(c.objective_id as string, { date: c.check_date as string, status: statusOf(c as { status?: ObjectiveStatus; achieved: boolean }) });
   }
 
   return (
@@ -116,7 +118,7 @@ export default async function AdminObjectives({ searchParams }: { searchParams: 
                     <p className="text-xs text-orc-muted">
                       {objectiveAreaLabel[o.area]}
                       {o.exercise_name ? ` · Ejercicio: ${o.exercise_name}` : ""}
-                      {st ? ` · ${st.achieved ? "Logrado" : "No logrado"} (última marca ${st.date.split("-").reverse().join("/")})` : " · Sin marcas"}
+                      {st ? ` · ${objectiveStatusIcon[st.status]} ${objectiveStatusLabel[st.status]} (última marca ${st.date.split("-").reverse().join("/")})` : " · Sin marcas"}
                     </p>
                   </div>
                   <span className="flex flex-wrap gap-1">

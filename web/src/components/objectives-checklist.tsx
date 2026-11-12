@@ -5,7 +5,18 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { hasConsent, loadCachedObjectives, refreshObjectives, saveLocalObjectiveCheck, type FieldData, type ObjectivesData } from "@/lib/offline/field-data";
 import { enqueue } from "@/lib/offline/outbox";
 import { objectiveCheckId } from "@/lib/offline/ids";
-import { AREA_ORDER, mergeChecks, objectiveAreaLabel, objectiveState, progress } from "@/lib/objectives";
+import {
+  AREA_ORDER,
+  mergeChecks,
+  objectiveAreaLabel,
+  objectiveState,
+  objectiveStatusIcon,
+  objectiveStatusLabel,
+  progress,
+  STATUS_ORDER,
+  statusOf,
+  type ObjectiveStatus,
+} from "@/lib/objectives";
 import { formatDate } from "@/lib/labels";
 import { clubToday } from "@/lib/validation";
 import type { Objective, ObjectiveCheck } from "@/lib/types";
@@ -53,7 +64,7 @@ export function ObjectivesChecklist({ data, categoryId, date, readOnly = false }
   );
 
   const canCheck = date <= today && !readOnly;
-  async function mark(o: Objective, achieved: boolean, note?: string | null) {
+  async function mark(o: Objective, status: ObjectiveStatus, note?: string | null) {
     if (!canCheck) return;
     const id = await objectiveCheckId(o.id, date, null);
     const prevNote = checks.find((c) => c.id === id)?.note ?? null;
@@ -63,7 +74,8 @@ export function ObjectivesChecklist({ data, categoryId, date, readOnly = false }
       season_id: data.season.id,
       check_date: date,
       player_id: null,
-      achieved,
+      status,
+      achieved: status === "achieved",
       note: note === undefined ? prevNote : note,
     };
     await saveLocalObjectiveCheck(row);
@@ -84,17 +96,18 @@ export function ObjectivesChecklist({ data, categoryId, date, readOnly = false }
     <div className="space-y-4">
       {objectives.length > 0 && (
         <>
-      <p className="text-sm text-orc-muted">Después de la práctica, tachá lo que el equipo cumplió. Tocá un objetivo para ver qué mirar y el ejercicio.</p>
+      <p className="text-sm text-orc-muted">
+        Después de la práctica, marcá cada objetivo: <b>✕ Todavía no</b>, <b>◐ En progreso</b> o <b>✓ Logrado</b>. Tocá el título para ver qué mirar, el
+        ejercicio y su recorrido.
+      </p>
       <section className="card space-y-2" aria-label="Avance">
-        <div className="flex items-baseline justify-between">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
           <span className="font-bold">{category?.name}</span>
           <span className="text-sm">
-            <b className="text-lg tabular-nums">{p.done}</b> de {p.total} logrados
+            <b className="text-lg tabular-nums">{p.done}</b> logrados · <b className="tabular-nums">{p.inProgress}</b> en progreso · de {p.total}
           </span>
         </div>
-        <div className="h-2.5 overflow-hidden rounded-full bg-orc-chip" role="progressbar" aria-valuemin={0} aria-valuemax={p.total} aria-valuenow={p.done}>
-          <div className="h-full rounded-full bg-orc-orange transition-all" style={{ width: `${p.total ? (p.done / p.total) * 100 : 0}%` }} />
-        </div>
+        <ProgressBar done={p.done} inProgress={p.inProgress} total={p.total} />
       </section>
 
       {AREA_ORDER.map((area) => {
@@ -111,13 +124,15 @@ export function ObjectivesChecklist({ data, categoryId, date, readOnly = false }
                   <ObjectiveItem
                     key={o.id}
                     objective={o}
-                    achieved={st.achieved}
-                    status={statusText(st)}
+                    current={st.status}
+                    todayStatus={st.today ? statusOf(st.today) : null}
+                    summary={statusText(st)}
+                    history={st.history}
                     note={st.today?.note ?? ""}
                     sync={pend ? (pend.status === "error" ? `No se pudo subir: ${pend.error}` : "Sin subir") : null}
                     disabled={!canCheck}
-                    onToggle={() => void mark(o, !st.achieved)}
-                    onNote={(note) => void mark(o, st.achieved, note || null)}
+                    onMark={(status) => void mark(o, status)}
+                    onNote={(note) => void mark(o, st.today ? statusOf(st.today) : (st.status ?? "not_yet"), note || null)}
                   />
                 );
               })}
@@ -144,56 +159,95 @@ export function ObjectivesChecklist({ data, categoryId, date, readOnly = false }
 }
 
 function statusText(st: ReturnType<typeof objectiveState>): string {
-  if (st.achieved) {
-    return st.firstAchieved && st.lastDate && st.firstAchieved !== st.lastDate
-      ? `Logrado desde el ${d(st.firstAchieved)} · última vez ${d(st.lastDate)}`
-      : `Logrado el ${d(st.lastDate!)}`;
-  }
-  if (st.lastDate) return `No se vio el ${d(st.lastDate)}${st.firstAchieved ? ` (logrado antes, el ${d(st.firstAchieved)})` : ""}`;
-  return "Pendiente";
+  if (!st.status || !st.lastDate) return "Sin marcar todavía";
+  const base = `${objectiveStatusIcon[st.status]} ${objectiveStatusLabel[st.status]} (${d(st.lastDate)})`;
+  if (st.status !== "achieved" && st.firstAchieved) return `${base} · logrado antes, el ${d(st.firstAchieved)}`;
+  if (st.status === "achieved" && st.firstAchieved && st.firstAchieved !== st.lastDate) return `${base} · logrado desde el ${d(st.firstAchieved)}`;
+  return base;
+}
+
+const STATUS_STYLE: Record<ObjectiveStatus, string> = {
+  not_yet: "border-zinc-500 bg-zinc-600 text-white",
+  in_progress: "border-amber-500 bg-amber-400 text-orc-black",
+  achieved: "border-orc-orange bg-orc-orange text-orc-black",
+};
+
+/** Barra de avance: logrados (naranja) y en progreso (ámbar). */
+export function ProgressBar({ done, inProgress, total }: { done: number; inProgress: number; total: number }) {
+  const pct = (n: number) => `${total ? (n / total) * 100 : 0}%`;
+  return (
+    <div
+      className="flex h-2.5 overflow-hidden rounded-full bg-orc-chip"
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={total}
+      aria-valuenow={done}
+      aria-valuetext={`${done} logrados y ${inProgress} en progreso de ${total}`}
+    >
+      <div className="h-full bg-orc-orange transition-all" style={{ width: pct(done) }} />
+      <div className="h-full bg-amber-400 transition-all" style={{ width: pct(inProgress) }} />
+    </div>
+  );
+}
+
+/** Tres botones: «Todavía no», «En progreso», «Logrado». */
+function StatusPicker({ value, onPick, disabled, label }: { value: ObjectiveStatus | null; onPick: (s: ObjectiveStatus) => void; disabled: boolean; label: string }) {
+  return (
+    <div className="grid grid-cols-3 gap-1" role="radiogroup" aria-label={label}>
+      {STATUS_ORDER.map((st) => (
+        <button
+          key={st}
+          type="button"
+          role="radio"
+          aria-checked={value === st}
+          aria-label={`${objectiveStatusLabel[st]}: ${label}`}
+          disabled={disabled}
+          onClick={() => onPick(st)}
+          className={`flex h-11 items-center justify-center gap-1 rounded-lg border px-1 text-sm font-semibold disabled:opacity-50 ${
+            value === st ? STATUS_STYLE[st] : "border-orc-line-strong bg-orc-field"
+          }`}
+        >
+          <span aria-hidden>{objectiveStatusIcon[st]}</span>
+          <span className="truncate">{objectiveStatusLabel[st]}</span>
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function ObjectiveItem({
   objective: o,
-  achieved,
-  status,
+  current,
+  todayStatus,
+  summary,
+  history,
   note,
   sync,
   disabled,
-  onToggle,
+  onMark,
   onNote,
 }: {
   objective: Objective;
-  achieved: boolean;
-  status: string;
+  current: ObjectiveStatus | null;
+  todayStatus: ObjectiveStatus | null;
+  summary: string;
+  history: ObjectiveCheck[];
   note: string;
   sync: string | null;
   disabled: boolean;
-  onToggle: () => void;
+  onMark: (s: ObjectiveStatus) => void;
   onNote: (note: string) => void;
 }) {
   const [draft, setDraft] = useState(note);
   useEffect(() => setDraft(note), [note]);
+  const border = current === "achieved" ? "border-orc-orange" : current === "in_progress" ? "border-amber-400" : "";
   return (
-    <li className={`card flex gap-3 p-3 ${achieved ? "border-orc-orange" : ""}`}>
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={achieved}
-        aria-label={`${achieved ? "Destachar" : "Tachar"}: ${o.title}`}
-        disabled={disabled}
-        onClick={onToggle}
-        className={`grid size-11 shrink-0 place-items-center rounded-lg border-2 text-2xl font-black ${
-          achieved ? "border-orc-orange bg-orc-orange text-orc-black" : "border-orc-line-strong bg-orc-field"
-        }`}
-      >
-        {achieved ? "✓" : ""}
-      </button>
-      <details className="min-w-0 flex-1">
+    <li className={`card space-y-2 p-3 ${border}`}>
+      <details className="min-w-0">
         <summary className="cursor-pointer list-none">
-          <span className={`block font-semibold ${achieved ? "line-through decoration-2 decoration-orc-orange" : ""}`}>{o.title}</span>
+          <span className="block font-semibold">{o.title}</span>
           <span className="block text-xs text-orc-muted">
-            {status}
+            {summary}
             {sync && <span className="chip tone-amber ml-2">{sync}</span>}
           </span>
         </summary>
@@ -214,6 +268,25 @@ function ObjectiveItem({
               )}
             </div>
           )}
+          {history.length > 0 && (
+            <div>
+              <p className="font-semibold">Recorrido en la temporada</p>
+              <ol className="mt-1 flex flex-wrap items-center gap-1" aria-label={`Recorrido: ${o.title}`}>
+                {history.map((h, i) => {
+                  const st = statusOf(h);
+                  return (
+                    <li key={h.id} className="flex items-center gap-1 text-xs">
+                      {i > 0 && <span aria-hidden className="text-orc-muted">→</span>}
+                      <span className={`chip ${st === "achieved" ? "tone-green" : st === "in_progress" ? "tone-amber" : ""}`}>
+                        {objectiveStatusIcon[st]} {d(h.check_date)}
+                        <span className="sr-only"> {objectiveStatusLabel[st]}</span>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          )}
           <div className="flex gap-2">
             <input
               className="field-input h-10 flex-1 text-sm"
@@ -230,6 +303,7 @@ function ObjectiveItem({
           </div>
         </div>
       </details>
+      <StatusPicker value={todayStatus} onPick={onMark} disabled={disabled} label={o.title} />
     </li>
   );
 }
@@ -277,19 +351,20 @@ function PlayerObjectives({
     };
   }, [players, o.id, date]);
 
-  async function mark(playerIds: string[], achieved: boolean) {
+  async function mark(playerIds: string[], status: ObjectiveStatus) {
     if (!canCheck) return;
     for (const pid of playerIds) {
       if (!consent.has(pid)) continue;
       const id = await objectiveCheckId(o.id, date, pid);
-      const row: ObjectiveCheck = { id, objective_id: o.id, season_id: data.season.id, check_date: date, player_id: pid, achieved, note: null };
+      const row: ObjectiveCheck = { id, objective_id: o.id, season_id: data.season.id, check_date: date, player_id: pid, status, achieved: status === "achieved", note: null };
       await saveLocalObjectiveCheck(row);
       await enqueue("objective_checks", { ...row });
     }
   }
 
   const states = new Map(players.map((p) => [p.id, objectiveState(checks, o.id, date, p.id)]));
-  const done = players.filter((p) => states.get(p.id)?.achieved).length;
+  const done = players.filter((p) => states.get(p.id)?.status === "achieved").length;
+  const inProg = players.filter((p) => states.get(p.id)?.status === "in_progress").length;
   const unmarkedToday = players.filter((p) => consent.has(p.id) && !states.get(p.id)?.today).map((p) => p.id);
   const countFor = (x: Objective) => players.filter((p) => objectiveState(checks, x.id, date, p.id).achieved).length;
 
@@ -321,12 +396,10 @@ function PlayerObjectives({
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="font-bold">{o.title}</h3>
           <span className="text-sm">
-            <b className="text-lg tabular-nums">{done}</b> de {players.length} lo lograron
+            <b className="text-lg tabular-nums">{done}</b> lo lograron · <b className="tabular-nums">{inProg}</b> en progreso · de {players.length}
           </span>
         </div>
-        <div className="h-2.5 overflow-hidden rounded-full bg-orc-chip" role="progressbar" aria-valuemin={0} aria-valuemax={players.length} aria-valuenow={done}>
-          <div className="h-full rounded-full bg-orc-orange transition-all" style={{ width: `${players.length ? (done / players.length) * 100 : 0}%` }} />
-        </div>
+        <ProgressBar done={done} inProgress={inProg} total={players.length} />
         {(o.look_for || o.exercise_name || o.exercise_description) && (
           <details className="text-sm">
             <summary className="cursor-pointer font-semibold text-orc-orange-strong">Qué mirar y ejercicio</summary>
@@ -348,7 +421,7 @@ function PlayerObjectives({
             )}
           </details>
         )}
-        <button type="button" className="btn-dark h-10" disabled={!canCheck || unmarkedToday.length === 0} onClick={() => void mark(unmarkedToday, true)}>
+        <button type="button" className="btn-dark h-10" disabled={!canCheck || unmarkedToday.length === 0} onClick={() => void mark(unmarkedToday, "achieved")}>
           {unmarkedToday.length ? `Todos logrados (${unmarkedToday.length} sin marcar hoy)` : "Todos marcados hoy"}
         </button>
       </div>
@@ -371,30 +444,9 @@ function PlayerObjectives({
                   {err ? <span className="chip tone-red ml-2">No se pudo subir: {err}</span> : pending ? <span className="chip tone-amber ml-2">Sin subir</span> : null}
                 </span>
               </span>
-              <span className="flex gap-1" role="radiogroup" aria-label={`${o.title}: ${name}`}>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={today?.achieved === true}
-                  aria-label={`Logrado: ${name}`}
-                  disabled={!canCheck || !ok}
-                  onClick={() => void mark([p.id], true)}
-                  className={`h-10 rounded-lg border px-3 text-sm font-semibold ${today?.achieved === true ? "border-green-600 bg-green-600 text-white" : "border-orc-line-strong bg-orc-field"}`}
-                >
-                  ✓ Logrado
-                </button>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={today?.achieved === false}
-                  aria-label={`No logrado: ${name}`}
-                  disabled={!canCheck || !ok}
-                  onClick={() => void mark([p.id], false)}
-                  className={`h-10 rounded-lg border px-3 text-sm font-semibold ${today?.achieved === false ? "border-red-600 bg-red-600 text-white" : "border-orc-line-strong bg-orc-field"}`}
-                >
-                  ✗ No
-                </button>
-              </span>
+              <div className="w-full sm:w-auto sm:min-w-80">
+                <StatusPicker value={today ? statusOf(today) : null} onPick={(st) => void mark([p.id], st)} disabled={!canCheck || !ok} label={name} />
+              </div>
             </li>
           );
         })}

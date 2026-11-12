@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ObjectiveStatusChip } from "@/components/objective-status-chip";
 import { TRACKED_METRICS } from "@/lib/alerts";
 import { attendancePct, countByStatus, type AttendanceRow } from "@/lib/attendance";
 import { fetchAll } from "@/lib/fetch-all";
@@ -52,7 +53,7 @@ export default async function MyPlayerPage({ searchParams }: { searchParams: Pro
         )
       : Promise.resolve([] as AttendanceRow[]),
     supabase.from("objectives").select("id, category_id, scope, area, title, look_for, exercise_name, exercise_description, exercise_url, sort_order").order("sort_order"),
-    supabase.from("objective_checks").select("id, objective_id, season_id, check_date, player_id, achieved, note").eq("season_id", season?.id ?? ""),
+    supabase.from("objective_checks").select("id, objective_id, season_id, check_date, player_id, achieved, status, note").eq("season_id", season?.id ?? ""),
     supabase.from("test_metrics").select("id, code, name, unit, decimals, higher_is_better, sort_order").in("code", [...TRACKED_METRICS]).order("sort_order"),
     supabase
       .from("v_session_best")
@@ -164,13 +165,7 @@ export default async function MyPlayerPage({ searchParams }: { searchParams: Pro
                     <span className="font-semibold">{o.title}</span>
                     <span className="block text-xs text-orc-muted">{objectiveAreaLabel[o.area]}</span>
                   </span>
-                  {st.achieved ? (
-                    <span className="chip tone-green shrink-0 text-xs">Logrado</span>
-                  ) : st.lastDate ? (
-                    <span className="chip tone-amber shrink-0 text-xs">En proceso</span>
-                  ) : (
-                    <span className="chip shrink-0 text-xs">Pendiente</span>
-                  )}
+                  <ObjectiveStatusChip status={st.status} />
                 </li>
               );
             })}
