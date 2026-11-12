@@ -87,14 +87,12 @@ export default async function HomePage() {
         const objs = ((objRes.data ?? []) as Objective[]).filter((o) => o.category_id === c.id);
         const ids = new Set(objs.map((o) => o.id));
         const checks = (objChecks as ObjectiveCheck[]).filter((k) => ids.has(k.objective_id));
-        const markedToday = checks.some((k) => k.check_date === today);
         return {
           category: c,
           players,
           taken,
           team: teamCats.has(c.id),
           objectives: objs.length ? (teamCats.has(c.id) ? progress(objs, checks, today) : { done: 0, total: objs.length }) : null,
-          markedToday,
         };
       })
     : [];
@@ -162,7 +160,7 @@ export default async function HomePage() {
                         </>
                       )}
                     </span>
-                    <a href={`/practica?tab=asistencia&categoria=${p.category.id}`} className={`${p.taken > 0 ? "btn-ghost" : "btn-dark"} h-10 shrink-0 text-sm`}>
+                    <a href={`/practica?categoria=${p.category.id}`} className={`${p.taken > 0 ? "btn-ghost" : "btn-dark"} h-10 shrink-0 text-sm`}>
                       {p.taken > 0 ? "Ver" : "Tomar asistencia"}
                     </a>
                   </div>
@@ -171,18 +169,17 @@ export default async function HomePage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-sm">
-                        {p.markedToday ? <span className="chip tone-green mr-1 text-xs">✓ Marcados hoy</span> : <span className="chip mr-1 text-xs">○ Sin marcar hoy</span>}
                         {p.team ? (
                           <>
-                            Objetivos <b className="tabular-nums">{p.objectives.done}</b> logrados
+                            Objetivos de la temporada: <b className="tabular-nums">{p.objectives.done}</b> logrados
                             {"inProgress" in p.objectives && p.objectives.inProgress > 0 && <> · {p.objectives.inProgress} en progreso</>} · de {p.objectives.total}
                           </>
                         ) : (
                           <>Objetivos por jugador ({p.objectives.total})</>
                         )}
                       </span>
-                      <a href={`/objetivos?categoria=${p.category.id}`} className={`${p.markedToday ? "btn-ghost" : "btn-primary"} h-10 shrink-0 text-sm`}>
-                        {p.team ? "Marcar objetivos" : "Ver objetivos"}
+                      <a href={`/objetivos?categoria=${p.category.id}`} className="btn-ghost h-10 shrink-0 text-sm">
+                        Ver objetivos
                       </a>
                     </div>
                     {p.team && p.objectives.total > 0 && (

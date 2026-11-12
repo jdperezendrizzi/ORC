@@ -97,8 +97,8 @@ export function ObjectivesChecklist({ data, categoryId, date, readOnly = false }
       {objectives.length > 0 && (
         <>
       <p className="text-sm text-orc-muted">
-        Después de la práctica, marcá cada objetivo: <b>✕ Todavía no</b>, <b>◐ En progreso</b> o <b>✓ Logrado</b>. Tocá el título para ver qué mirar, el
-        ejercicio y su recorrido.
+        Cada objetivo tiene un estado en la temporada: <b>✕ Todavía no</b>, <b>◐ En progreso</b> o <b>✓ Logrado</b>. Cambialo cuando veas un avance; tocá el
+        título para ver qué mirar, el ejercicio y su recorrido.
       </p>
       <section className="card space-y-2" aria-label="Avance">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -125,14 +125,13 @@ export function ObjectivesChecklist({ data, categoryId, date, readOnly = false }
                     key={o.id}
                     objective={o}
                     current={st.status}
-                    todayStatus={st.today ? statusOf(st.today) : null}
                     summary={statusText(st)}
                     history={st.history}
                     note={st.today?.note ?? ""}
                     sync={pend ? (pend.status === "error" ? `No se pudo subir: ${pend.error}` : "Sin subir") : null}
                     disabled={!canCheck}
                     onMark={(status) => void mark(o, status)}
-                    onNote={(note) => void mark(o, st.today ? statusOf(st.today) : (st.status ?? "not_yet"), note || null)}
+                    onNote={(note) => void mark(o, st.status ?? "not_yet", note || null)}
                   />
                 );
               })}
@@ -158,11 +157,20 @@ export function ObjectivesChecklist({ data, categoryId, date, readOnly = false }
   );
 }
 
+/** Desde qué fecha está en el estado actual (inicio de la última racha igual). */
+function since(history: ObjectiveCheck[]): string | null {
+  if (history.length === 0) return null;
+  const cur = statusOf(history[history.length - 1]);
+  let i = history.length - 1;
+  while (i > 0 && statusOf(history[i - 1]) === cur) i--;
+  return history[i].check_date;
+}
+
 function statusText(st: ReturnType<typeof objectiveState>): string {
   if (!st.status || !st.lastDate) return "Sin marcar todavía";
-  const base = `${objectiveStatusIcon[st.status]} ${objectiveStatusLabel[st.status]} (${d(st.lastDate)})`;
-  if (st.status !== "achieved" && st.firstAchieved) return `${base} · logrado antes, el ${d(st.firstAchieved)}`;
-  if (st.status === "achieved" && st.firstAchieved && st.firstAchieved !== st.lastDate) return `${base} · logrado desde el ${d(st.firstAchieved)}`;
+  const from = since(st.history) ?? st.lastDate;
+  const base = `${objectiveStatusIcon[st.status]} ${objectiveStatusLabel[st.status]} desde el ${d(from)}`;
+  if (st.status !== "achieved" && st.firstAchieved) return `${base} · estuvo logrado el ${d(st.firstAchieved)}`;
   return base;
 }
 
@@ -218,7 +226,6 @@ function StatusPicker({ value, onPick, disabled, label }: { value: ObjectiveStat
 function ObjectiveItem({
   objective: o,
   current,
-  todayStatus,
   summary,
   history,
   note,
@@ -229,7 +236,6 @@ function ObjectiveItem({
 }: {
   objective: Objective;
   current: ObjectiveStatus | null;
-  todayStatus: ObjectiveStatus | null;
   summary: string;
   history: ObjectiveCheck[];
   note: string;
@@ -290,7 +296,7 @@ function ObjectiveItem({
           <div className="flex gap-2">
             <input
               className="field-input h-10 flex-1 text-sm"
-              placeholder="Nota de esta práctica (opcional)"
+              placeholder="Nota (opcional)"
               maxLength={300}
               value={draft}
               disabled={disabled}
@@ -303,7 +309,7 @@ function ObjectiveItem({
           </div>
         </div>
       </details>
-      <StatusPicker value={todayStatus} onPick={onMark} disabled={disabled} label={o.title} />
+      <StatusPicker value={current} onPick={onMark} disabled={disabled} label={o.title} />
     </li>
   );
 }
@@ -365,14 +371,14 @@ function PlayerObjectives({
   const states = new Map(players.map((p) => [p.id, objectiveState(checks, o.id, date, p.id)]));
   const done = players.filter((p) => states.get(p.id)?.status === "achieved").length;
   const inProg = players.filter((p) => states.get(p.id)?.status === "in_progress").length;
-  const unmarkedToday = players.filter((p) => consent.has(p.id) && !states.get(p.id)?.today).map((p) => p.id);
+  const unmarked = players.filter((p) => consent.has(p.id) && !states.get(p.id)?.status).map((p) => p.id);
   const countFor = (x: Objective) => players.filter((p) => objectiveState(checks, x.id, date, p.id).achieved).length;
 
   return (
     <section className="space-y-3" aria-label="Objetivos por jugador">
       <div>
         <h2 className="text-sm font-bold uppercase tracking-wide text-orc-muted">Objetivos por jugador</h2>
-        <p className="text-sm text-orc-muted">Elegí un objetivo y marcá a cada jugador. Si no lo viste hoy, dejalo sin marcar.</p>
+        <p className="text-sm text-orc-muted">Elegí un objetivo y marcá en qué punto está cada jugador. Actualizalo cuando veas un avance.</p>
       </div>
       <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Objetivo">
         {objectives.map((x) => (
@@ -421,8 +427,8 @@ function PlayerObjectives({
             )}
           </details>
         )}
-        <button type="button" className="btn-dark h-10" disabled={!canCheck || unmarkedToday.length === 0} onClick={() => void mark(unmarkedToday, "achieved")}>
-          {unmarkedToday.length ? `Todos logrados (${unmarkedToday.length} sin marcar hoy)` : "Todos marcados hoy"}
+        <button type="button" className="btn-dark h-10" disabled={!canCheck || unmarked.length === 0} onClick={() => void mark(unmarked, "achieved")}>
+          {unmarked.length ? `Logrado a los ${unmarked.length} sin marcar` : "Todos marcados"}
         </button>
       </div>
 
@@ -445,7 +451,7 @@ function PlayerObjectives({
                 </span>
               </span>
               <div className="w-full sm:w-auto sm:min-w-80">
-                <StatusPicker value={today ? statusOf(today) : null} onPick={(st) => void mark([p.id], st)} disabled={!canCheck || !ok} label={name} />
+                <StatusPicker value={st.status} onPick={(x) => void mark([p.id], x)} disabled={!canCheck || !ok} label={name} />
               </div>
             </li>
           );

@@ -10,18 +10,27 @@ import { useSync } from "./sync-provider";
 import { AttendanceTab } from "./attendance-tab";
 import { ObjectivesChecklist } from "./objectives-checklist";
 
-type Tab = "asistencia" | "objetivos";
 const CAN_USE = ["admin", "coach"];
 
-/** Asistencia: tomar asistencia (al empezar) y objetivos (al terminar). Funciona sin señal. */
+/**
+ * Asistencia (por práctica, con fecha) u Objetivos (estado de la temporada,
+ * se actualiza cuando hay un avance). Son dos módulos separados. Funciona sin señal.
+ */
 export function PracticeScreen({ only }: { only?: "objetivos" } = {}) {
+  const mode = only === "objetivos" ? "objetivos" : "asistencia";
   const { data, loading } = useFieldData();
   const { online } = useSync();
   const params = useSearchParams();
   const today = clubToday();
-  const [tab, setTab] = useState<Tab>(only === "objetivos" || params.get("tab") === "objetivos" ? "objetivos" : "asistencia");
   const [categoryId, setCategoryId] = useState(params.get("categoria") ?? "");
   const [date, setDate] = useState(today);
+
+  // Links viejos (/practica?tab=objetivos) → módulo Objetivos
+  useEffect(() => {
+    if (mode === "asistencia" && params.get("tab") === "objetivos") {
+      window.location.replace(`/objetivos${params.get("categoria") ? `?categoria=${params.get("categoria")}` : ""}`);
+    }
+  }, [mode, params]);
 
   useEffect(() => {
     if (data && (!categoryId || !data.categories.some((c) => c.id === categoryId))) setCategoryId(data.categories[0]?.id ?? "");
@@ -30,10 +39,10 @@ export function PracticeScreen({ only }: { only?: "objetivos" } = {}) {
   // Mantener la URL al día sin navegar (así funciona sin señal).
   useEffect(() => {
     const u = new URL(window.location.href);
-    if (!only) u.searchParams.set("tab", tab);
+    u.searchParams.delete("tab");
     if (categoryId) u.searchParams.set("categoria", categoryId);
     window.history.replaceState(null, "", u);
-  }, [tab, categoryId, only]);
+  }, [categoryId]);
 
   if (!data) {
     return (
@@ -42,24 +51,29 @@ export function PracticeScreen({ only }: { only?: "objetivos" } = {}) {
       </p>
     );
   }
-  if (!CAN_USE.includes(data.profile.role)) return <p className="card">La asistencia y los objetivos los cargan los entrenadores.</p>;
+  if (!CAN_USE.includes(data.profile.role)) {
+    return <p className="card">{mode === "objetivos" ? "Los objetivos los marcan los entrenadores." : "La asistencia la toman los entrenadores."}</p>;
+  }
   const mods = fieldModules(data);
-  const tabs = (only ? [only] : (["asistencia", "objetivos"] as Tab[])).filter((t) => canView(mods, t === "asistencia" ? "attendance" : "objectives"));
-  if (tabs.length === 0) return <p className="card">No tenés habilitados {only ? "los objetivos" : "la asistencia ni los objetivos"}.</p>;
-  const current = tabs.includes(tab) ? tab : tabs[0];
-  const readOnly = !canEdit(mods, current === "asistencia" ? "attendance" : "objectives");
+  const module = mode === "asistencia" ? "attendance" : "objectives";
+  if (!canView(mods, module)) {
+    return <p className="card">No tenés habilitad{mode === "objetivos" ? "os los objetivos" : "a la asistencia"}. Pedíselo al admin.</p>;
+  }
+  const readOnly = !canEdit(mods, module);
 
   return (
     <div className="space-y-4">
       <header className="space-y-3">
         <div>
-          <h1 className="text-2xl font-black">{only ? "Objetivos" : "Asistencia"}</h1>
+          <h1 className="text-2xl font-black">{mode === "objetivos" ? "Objetivos de la temporada" : "Asistencia"}</h1>
           <p className="text-sm text-orc-muted">
-            {only ? "Al terminar la práctica, marcá cómo le fue al equipo en cada objetivo." : "Al empezar, la asistencia. Al terminar, los objetivos."}
+            {mode === "objetivos"
+              ? "Marcá en qué punto está el equipo en cada objetivo y actualizalo cuando veas un avance."
+              : "Tomá la asistencia al empezar la práctica."}
             {!online && " Sin señal: se guarda en el celular y se sube sola."}
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className={`grid gap-3 ${mode === "asistencia" ? "grid-cols-2" : "grid-cols-1 sm:max-w-sm"}`}>
           <label className="block">
             <span className="label">Categoría</span>
             <select className="field-input" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
@@ -70,48 +84,25 @@ export function PracticeScreen({ only }: { only?: "objetivos" } = {}) {
               ))}
             </select>
           </label>
-          <label className="block">
-            <span className="label">Fecha</span>
-            <input type="date" className="field-input" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} />
-          </label>
+          {mode === "asistencia" && (
+            <label className="block">
+              <span className="label">Fecha</span>
+              <input type="date" className="field-input" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} />
+            </label>
+          )}
         </div>
-        {!only && (
-        <div className={`grid gap-1 rounded-xl bg-orc-chip p-1 ${tabs.length > 1 ? "grid-cols-2" : "grid-cols-1"}`} role="tablist">
-          {tabs.map((t) => (
-            <button
-              key={t}
-              type="button"
-              role="tab"
-              aria-selected={current === t}
-              onClick={() => setTab(t)}
-              className={`rounded-lg py-2 text-sm font-bold ${current === t ? "bg-orc-surface shadow-sm" : "text-orc-muted"}`}
-            >
-              {t === "asistencia" ? "Asistencia" : "Objetivos"}
-            </button>
-          ))}
-        </div>
-        )}
       </header>
 
-      {readOnly && <p className="rounded-lg tone-amber px-3 py-2 text-sm">Sólo para ver: no tenés habilitada la carga de {current === "asistencia" ? "asistencia" : "objetivos"}.</p>}
+      {readOnly && (
+        <p className="rounded-lg tone-amber px-3 py-2 text-sm">
+          Sólo para ver: no tenés habilitada la carga de {mode === "asistencia" ? "asistencia" : "objetivos"}.
+        </p>
+      )}
       {categoryId &&
-        (current === "asistencia" ? (
-          <AttendanceTab
-            data={data}
-            categoryId={categoryId}
-            date={date}
-            readOnly={readOnly}
-            onGoObjectives={
-              tabs.includes("objetivos")
-                ? () => {
-                    setTab("objetivos");
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }
-                : undefined
-            }
-          />
+        (mode === "asistencia" ? (
+          <AttendanceTab data={data} categoryId={categoryId} date={date} readOnly={readOnly} />
         ) : (
-          <ObjectivesChecklist data={data} categoryId={categoryId} date={date} readOnly={readOnly} />
+          <ObjectivesChecklist data={data} categoryId={categoryId} date={today} readOnly={readOnly} />
         ))}
     </div>
   );

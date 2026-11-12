@@ -109,14 +109,15 @@ export function navItems({ canLoad, isAdmin = false, isStaff = true, modules, in
       label: "Asistencia",
       icon: <Icon>{icons.objectives}</Icon>,
       primary: true,
-      show: canLoad && (view("attendance") || view("objectives")),
+      show: canLoad && view("attendance"),
     },
     {
       href: "/objetivos",
       label: "Objetivos",
       icon: <Icon>{icons.check}</Icon>,
-      primary: true,
-      show: infantile && canLoad && view("objectives"),
+      // Módulo propio: en la barra para los profes de infantiles; en «Más» para el resto.
+      primary: infantile,
+      show: canLoad && view("objectives"),
     },
     {
       href: "/cargar",

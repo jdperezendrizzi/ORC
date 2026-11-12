@@ -72,7 +72,7 @@ export default async function AttendanceSummaryPage({
 
   return (
     <div className="space-y-4">
-      <a href={`/practica?tab=asistencia&categoria=${category.id}`} className="text-sm text-orc-muted">
+      <a href={`/practica?categoria=${category.id}`} className="text-sm text-orc-muted">
         ← Asistencia
       </a>
       <header>
