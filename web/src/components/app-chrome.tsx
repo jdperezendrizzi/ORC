@@ -441,7 +441,10 @@ export function AccountMenu({ name, role }: { name: string; role: string }) {
               <span className="text-sm text-white/70">Tema</span>
               <ThemeToggle />
             </div>
-            <div className="mt-3 border-t border-white/10 pt-2">
+            <div className="mt-3 space-y-1 border-t border-white/10 pt-2">
+              <a href="/cuenta/clave" className="flex w-full items-center rounded-lg px-3 py-2 text-sm font-semibold text-white hover:bg-white/10">
+                Cambiar contraseña
+              </a>
               <LogoutButton className="w-full text-white hover:bg-white/10" />
             </div>
           </div>

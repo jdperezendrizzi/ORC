@@ -89,6 +89,9 @@ export function SetPasswordForm() {
       <button type="submit" disabled={phase === "saving"} className="btn-primary w-full">
         {phase === "saving" ? "Guardando…" : "Guardar y entrar"}
       </button>
+      <a href="/" className="block text-center text-sm font-semibold text-white/70 hover:text-white">
+        Volver sin cambiar
+      </a>
     </form>
   );
 }
