@@ -115,8 +115,9 @@ export function navItems({ canLoad, isAdmin = false, isStaff = true, modules, in
       href: "/objetivos",
       label: "Objetivos",
       icon: <Icon>{icons.check}</Icon>,
-      // Módulo propio: en la barra para los profes de infantiles; en «Más» para el resto.
-      primary: infantile,
+      // Módulo propio: en la barra para los profes de infantiles (y para quien no carga
+      // evaluaciones, p. ej. el coordinador que da el ok a los objetivos); en «Más» para el resto.
+      primary: infantile || (!!modules && !canEdit(modules, "performance")),
       show: canLoad && view("objectives"),
     },
     {
