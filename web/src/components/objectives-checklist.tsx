@@ -21,6 +21,10 @@ import { formatDate } from "@/lib/labels";
 import { clubToday } from "@/lib/validation";
 import type { Objective, ObjectiveCheck } from "@/lib/types";
 import { useSync } from "./sync-provider";
+import { ObjectivesSummary } from "./objectives-summary";
+import { buildObjectivesReport } from "@/lib/objectives-report";
+import { canEdit } from "@/lib/modules";
+import { fieldModules } from "@/lib/offline/field-data";
 
 const d = (iso: string) => formatDate(iso, { day: "numeric", month: "short" });
 
@@ -84,6 +88,19 @@ export function ObjectivesChecklist({ data, categoryId, date, readOnly = false }
 
   const p = progress(objectives, checks, date);
   const category = data.categories.find((c) => c.id === categoryId);
+  const report = useMemo(
+    () =>
+      buildObjectivesReport({
+        categoryName: category?.name ?? "",
+        seasonName: data.season.name,
+        today: date,
+        objectives: [...objectives, ...playerObjectives],
+        checks,
+        playerIds: data.roster.filter((r) => r.category_id === categoryId).map((r) => r.id),
+      }),
+    [category, data, date, objectives, playerObjectives, checks, categoryId],
+  );
+  const canShare = canEdit(fieldModules(data), "sharing");
 
   if (objectives.length === 0 && playerObjectives.length === 0) {
     return (
@@ -108,6 +125,9 @@ export function ObjectivesChecklist({ data, categoryId, date, readOnly = false }
           </span>
         </div>
         <ProgressBar done={p.done} inProgress={p.inProgress} total={p.total} />
+        <a href="#resumen" className="inline-block text-sm font-semibold text-orc-orange-strong">
+          Ver resumen, gráficos y compartir ↓
+        </a>
       </section>
 
       {AREA_ORDER.map((area) => {
@@ -153,6 +173,7 @@ export function ObjectivesChecklist({ data, categoryId, date, readOnly = false }
           errors={new Map(pendingRows.filter((r) => r.item.status === "error").map((r) => [r.row.id, r.item.error ?? ""]))}
         />
       )}
+      <ObjectivesSummary report={report} categoryId={categoryId} canShare={canShare} />
     </div>
   );
 }
