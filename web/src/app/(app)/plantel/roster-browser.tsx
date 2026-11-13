@@ -69,8 +69,6 @@ export function RosterBrowser({
   }, [rows, q, cat, unit, onlyInjured, onlyNoConsent]);
 
   const selected = categories.find((c) => c.id === cat);
-  const chip = (active: boolean) =>
-    `shrink-0 rounded-full border px-3 py-1.5 text-sm font-semibold ${active ? "border-orc-orange bg-orc-orange text-orc-black" : "border-orc-line-strong bg-orc-surface"}`;
 
   return (
     <section className="space-y-3" aria-label="Jugadores">
@@ -84,16 +82,17 @@ export function RosterBrowser({
           className="field-input"
         />
         {categories.length > 1 && (
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Categoría">
-            <button type="button" className={chip(!cat)} onClick={() => setCat("")} aria-pressed={!cat}>
-              Todas ({rows.length})
-            </button>
-            {categories.filter((c) => (count.get(c.id) ?? 0) > 0 || c.id === cat).map((c) => (
-              <button key={c.id} type="button" className={chip(cat === c.id)} onClick={() => setCat(c.id)} aria-pressed={cat === c.id} title={c.name}>
-                {c.code} ({count.get(c.id) ?? 0})
-              </button>
-            ))}
-          </div>
+          <label className="block">
+            <span className="label">Categoría</span>
+            <select value={cat} onChange={(e) => setCat(e.target.value)} className="field-input" aria-label="Categoría">
+              <option value="">Todas las categorías ({rows.length})</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({count.get(c.id) ?? 0})
+                </option>
+              ))}
+            </select>
+          </label>
         )}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <select value={unit} onChange={(e) => setUnit(e.target.value)} aria-label="Forwards o backs" className="field-input h-10 w-auto text-sm">
@@ -129,9 +128,18 @@ export function RosterBrowser({
           <span className="text-orc-muted">›</span>
         </a>
       )}
+      {selected && (
+        <a href={`/plantel/estado?categoria=${selected.id}`} className="btn-ghost h-11 w-full">
+          Estado del equipo de {selected.code} · compartir
+        </a>
+      )}
 
       {filtered.length === 0 ? (
-        <p className="card text-sm">Ningún jugador coincide con la búsqueda.</p>
+        <p className="card text-sm">
+          {selected && (count.get(selected.id) ?? 0) === 0
+            ? `Todavía no hay jugadores cargados en ${selected.name}. Se cargan desde Admin › Jugadores › Importar plantel.`
+            : "Ningún jugador coincide con la búsqueda."}
+        </p>
       ) : (
         <ul className="card divide-y divide-orc-line p-0">
           {filtered.map((r) => (
