@@ -6,6 +6,7 @@ import type { ObjectivesReport } from "@/lib/objectives-report";
 import { objectivesReportText } from "@/lib/objectives-report";
 import { buildObjectivesPdf } from "@/lib/report/objectives-pdf";
 import { logObjectivesReport } from "@/app/(app)/objetivos/actions";
+import { crestDataUrl, downloadBlob, shareOrDownload } from "@/lib/download";
 
 const SEG = [
   { k: "achieved", label: "Logrados", cls: "bg-orc-orange" },
@@ -14,20 +15,6 @@ const SEG = [
   { k: "unmarked", label: "Sin marcar", cls: "bg-orc-chip" },
 ] as const;
 
-async function crestDataUrl(): Promise<string | null> {
-  try {
-    const blob = await (await fetch("/crest.png")).blob();
-    return await new Promise((resolve) => {
-      const r = new FileReader();
-      r.onload = () => resolve(String(r.result));
-      r.onerror = () => resolve(null);
-      r.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
-}
-
 /** Resumen de la temporada: gráficos + compartir (WhatsApp / PDF). */
 export function ObjectivesSummary({ report, categoryId, canShare }: { report: ObjectivesReport; categoryId: string; canShare: boolean }) {
   const [busy, setBusy] = useState<string | null>(null);
@@ -35,8 +22,8 @@ export function ObjectivesSummary({ report, categoryId, canShare }: { report: Ob
   const text = objectivesReportText(report);
   const base = `Objetivos ${report.categoryName} ${report.today}`;
 
-  async function run(format: "pdf" | "text") {
-    setBusy(format);
+  async function run(format: "pdf" | "text", save = false) {
+    setBusy(save ? "download" : format);
     setMsg({});
     if (!navigator.onLine) {
       setBusy(null);
@@ -51,23 +38,12 @@ export function ObjectivesSummary({ report, categoryId, canShare }: { report: Ob
       if (format === "pdf") {
         const blob = await buildObjectivesPdf(report, await crestDataUrl());
         const file = new File([blob], `${base}.pdf`, { type: "application/pdf" });
-        try {
-          if (navigator.canShare?.({ files: [file] })) {
-            await navigator.share({ files: [file], title: base });
-            return setMsg({ ok: "PDF listo para compartir." });
-          }
-        } catch (e) {
-          if (e instanceof DOMException && e.name === "AbortError") return;
+        if (save) {
+          downloadBlob(blob, file.name);
+          return setMsg({ ok: "PDF descargado." });
         }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = file.name;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 10_000);
-        setMsg({ ok: "PDF descargado." });
+        const r = await shareOrDownload(file, base);
+        if (r !== "cancelled") setMsg({ ok: r === "shared" ? "PDF listo para compartir." : "PDF descargado." });
       } else {
         try {
           if (navigator.share) {
@@ -122,7 +98,10 @@ export function ObjectivesSummary({ report, categoryId, canShare }: { report: Ob
         {canShare ? (
           <div className="flex flex-wrap gap-2">
             <button type="button" className="btn-primary h-11" disabled={!!busy} onClick={() => void run("pdf")}>
-              {busy === "pdf" ? "Generando…" : "PDF con gráficos"}
+              {busy === "pdf" ? "Generando…" : "Compartir PDF"}
+            </button>
+            <button type="button" className="btn-ghost h-11" disabled={!!busy} onClick={() => void run("pdf", true)}>
+              {busy === "download" ? "Generando…" : "Descargar PDF"}
             </button>
             <button type="button" className="btn-ghost h-11" disabled={!!busy} onClick={() => void run("text")}>
               {busy === "text" ? "Preparando…" : "Compartir por WhatsApp"}

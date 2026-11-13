@@ -4,31 +4,7 @@ import { useState } from "react";
 import type { AttendanceReport } from "@/lib/attendance-report";
 import { buildAttendancePdf } from "@/lib/report/attendance-pdf";
 import { logAttendanceExport } from "./actions";
-
-async function crestDataUrl(): Promise<string | null> {
-  try {
-    const blob = await (await fetch("/crest.png")).blob();
-    return await new Promise((resolve) => {
-      const r = new FileReader();
-      r.onload = () => resolve(String(r.result));
-      r.onerror = () => resolve(null);
-      r.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
-}
-
-function download(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
-}
+import { crestDataUrl, downloadBlob, shareOrDownload } from "@/lib/download";
 
 export interface DetailRow {
   date: string;
@@ -61,8 +37,8 @@ export function AttendanceExport({
   const [msg, setMsg] = useState<{ ok?: string; error?: string }>({});
   const base = `Asistencia ${categoryName} - ${periodLabel}`;
 
-  async function run(format: "xlsx" | "pdf" | "text") {
-    setBusy(format);
+  async function run(format: "xlsx" | "pdf" | "text", save = false) {
+    setBusy(save ? "download" : format);
     setMsg({});
     const auth = await logAttendanceExport(categoryId, report.from, report.to, format);
     if ("error" in auth) {
@@ -113,16 +89,12 @@ export function AttendanceExport({
       } else if (format === "pdf") {
         const blob = await buildAttendancePdf(report, { categoryName, periodLabel, seasonName, insights }, await crestDataUrl());
         const file = new File([blob], `${base}.pdf`, { type: "application/pdf" });
-        try {
-          if (navigator.canShare?.({ files: [file] })) {
-            await navigator.share({ files: [file], title: base });
-            return setMsg({ ok: "PDF listo para compartir." });
-          }
-        } catch (e) {
-          if (e instanceof DOMException && e.name === "AbortError") return;
+        if (save) {
+          downloadBlob(blob, file.name);
+          return setMsg({ ok: "PDF descargado." });
         }
-        download(blob, file.name);
-        setMsg({ ok: "PDF descargado." });
+        const r = await shareOrDownload(file, base);
+        if (r !== "cancelled") setMsg({ ok: r === "shared" ? "PDF listo para compartir." : "PDF descargado." });
       } else {
         try {
           if (navigator.share) {
@@ -149,10 +121,13 @@ export function AttendanceExport({
           {busy === "text" ? "Preparando…" : "Compartir por WhatsApp"}
         </button>
         <button type="button" className="btn-ghost h-10" disabled={!!busy} onClick={() => void run("xlsx")}>
-          {busy === "xlsx" ? "Generando…" : "Excel"}
+          {busy === "xlsx" ? "Generando…" : "Descargar Excel"}
         </button>
         <button type="button" className="btn-ghost h-10" disabled={!!busy} onClick={() => void run("pdf")}>
-          {busy === "pdf" ? "Generando…" : "PDF"}
+          {busy === "pdf" ? "Generando…" : "Compartir PDF"}
+        </button>
+        <button type="button" className="btn-ghost h-10" disabled={!!busy} onClick={() => void run("pdf", true)}>
+          {busy === "download" ? "Generando…" : "Descargar PDF"}
         </button>
       </div>
       {msg.ok && <p className="chip tone-green px-3 py-1 text-sm">{msg.ok}</p>}

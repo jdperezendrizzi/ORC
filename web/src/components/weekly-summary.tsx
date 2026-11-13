@@ -1,5 +1,6 @@
 "use client";
 
+import { downloadBlob } from "@/lib/download";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { ActionResult, FormAction } from "./action-form";
@@ -88,6 +89,15 @@ export function WeeklySummaryCard({
             </button>
             <button type="button" className="btn-ghost h-10" onClick={() => void copy()}>
               {copied ? "¡Copiado!" : "Copiar"}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost h-10"
+              onClick={() =>
+                downloadBlob(new Blob([shareText], { type: "text/plain;charset=utf-8" }), `Resumen semanal ${categoryName} - ${summary.periodLabel}.txt`)
+              }
+            >
+              Descargar
             </button>
           </>
         )}

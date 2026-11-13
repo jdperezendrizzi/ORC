@@ -64,7 +64,7 @@ export function ShareReportButton({
     });
   }
 
-  async function run() {
+  async function run(save = false) {
     setReady(null);
     setState({ busy: true });
     const auth = await authorizeReport(playerId);
@@ -72,6 +72,10 @@ export function ShareReportButton({
     const blob = await buildPlayerReportPdf(data, await crestDataUrl());
     const fileName = `Informe ORC - ${data.playerName}.pdf`;
     const file = new File([blob], fileName, { type: "application/pdf" });
+    if (save) {
+      download(blob, fileName);
+      return setState({ busy: false, msg: "PDF descargado." });
+    }
     try {
       if (navigator.canShare?.({ files: [file] })) {
         await shareFile(file);
@@ -101,6 +105,14 @@ export function ShareReportButton({
       <button type="button" onClick={() => void run()} disabled={state.busy} className="btn-primary h-10">
         {shareIcon}
         {state.busy ? "Generando…" : "Compartir informe (PDF)"}
+      </button>
+      <button
+        type="button"
+        onClick={() => void run(true)}
+        disabled={state.busy}
+        className="btn-ghost h-10 border-white/30 bg-transparent text-white hover:bg-white/10"
+      >
+        Descargar PDF
       </button>
       {ready && (
         <button
