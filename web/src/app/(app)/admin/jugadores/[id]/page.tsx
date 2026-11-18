@@ -56,7 +56,7 @@ export default async function AdminPlayer({
       .order("granted_at", { ascending: false }),
     supabase
       .from("player_private")
-      .select("document_id, phone, email, address, emergency_contact, medical_notes")
+      .select("document_id, school, phone, email, address, emergency_contact, medical_notes")
       .eq("player_id", id)
       .maybeSingle(),
   ]);
@@ -369,6 +369,9 @@ export default async function AdminPlayer({
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="DNI" id="p_doc">
               <input id="p_doc" name="document_id" inputMode="numeric" defaultValue={priv?.document_id ?? ""} className="field-input" />
+            </Field>
+            <Field label="Colegio" id="p_school">
+              <input id="p_school" name="school" maxLength={120} defaultValue={priv?.school ?? ""} className="field-input" />
             </Field>
             <Field label="Teléfono del jugador" id="p_phone">
               <input id="p_phone" name="phone" type="tel" defaultValue={priv?.phone ?? ""} className="field-input" />

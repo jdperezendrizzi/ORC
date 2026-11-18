@@ -161,3 +161,24 @@ describe("parseCsv", () => {
     ]);
   });
 });
+
+describe("Colegio y categoría por año de nacimiento", () => {
+  const head = ["Apellido", "Nombre", "Fecha de nacimiento", "Sexo", "Categoría", "DNI", "Colegio"];
+  it("lee el colegio y lo manda a la base", () => {
+    const r = parseRoster([head, ["Agostino", "Kai", "25/11/2011", "M", "M15", "58065487", " Dardo Rocha "]], ctx);
+    expect(r.ignoredHeaders).toEqual([]);
+    expect(r.rows[0].values.school).toBe("Dardo Rocha");
+    expect(toImportPayload(r.rows)[0]).toMatchObject({ school: "Dardo Rocha" });
+  });
+  it("categoría vacía: la asigna por año de nacimiento (con aviso)", () => {
+    const r = parseRoster([head, ["Ale", "Joaquín", "19/06/2011", "M", "", "", ""], ["Viejo", "Juan", "01/01/1990", "M", "", "", ""]], ctx);
+    expect(r.rows[0].categoryId).toBe("c15");
+    expect(r.rows[0].warnings.join(" ")).toMatch(/se asigna M15 por el año de nacimiento/);
+    expect(r.rows[1].categoryId).toBeNull();
+    expect(r.rows[1].warnings.join(" ")).toMatch(/Sin categoría: no lo va a ver ningún profe/);
+  });
+  it("la categoría escrita manda sobre el año", () => {
+    const r = parseRoster([head, ["Otro", "Pedro", "19/06/2011", "M", "M17", "", ""]], ctx);
+    expect(r.rows[0].categoryId).toBe("c17");
+  });
+});

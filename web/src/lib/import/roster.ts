@@ -29,6 +29,7 @@ export interface RowValues {
   guardian_email: string;
   consent_performance: string;
   consent_medical: string;
+  school: string;
 }
 
 export const COLUMNS: ColumnDef[] = [
@@ -71,7 +72,17 @@ export const COLUMNS: ColumnDef[] = [
     example: ["01/03/2026", ""],
     help: "Igual que el anterior, para datos de salud y lesiones.",
   },
+  { key: "school", header: "Colegio", aliases: ["escuela", "colegio jugador", "institucion", "institución"], example: ["Dardo Rocha", ""], help: "Opcional. Colegio al que va el jugador (dato privado, como el DNI)." },
 ];
+
+/**
+ * Categoría por año de nacimiento: «Menores de N» = nacidos en (año de la
+ * temporada − N). Se usa sólo cuando la planilla trae la categoría vacía.
+ */
+export function categoryByBirthYear(birth: string, today: string, categories: ParseContext["categories"]): ParseContext["categories"][number] | null {
+  const n = Number(today.slice(0, 4)) - Number(birth.slice(0, 4));
+  return categories.find((c) => c.code.toUpperCase() === `M${n}`) ?? null;
+}
 
 export type RowAction = "create" | "update" | "error";
 
@@ -278,6 +289,7 @@ export function parseRoster(sheet: unknown[][], ctx: ParseContext): ParseResult 
       guardian_email: text("guardian_email"),
       consent_performance: text("consent_performance"),
       consent_medical: text("consent_medical"),
+      school: text("school"),
     };
 
     if (!values.last_name) errors.push("Falta el apellido.");
@@ -289,9 +301,16 @@ export function parseRoster(sheet: unknown[][], ctx: ParseContext): ParseResult 
     }
     if (!sex) errors.push(values.sex ? `Sexo no reconocido: «${values.sex}» (usá M o F).` : "Falta el sexo (M o F).");
 
-    const categoryId = matchCategory(values.category, ctx.categories);
+    let categoryId = matchCategory(values.category, ctx.categories);
     if (values.category && !categoryId) errors.push(`Categoría desconocida: «${values.category}».`);
-    if (!values.category) warnings.push("Sin categoría: no lo va a ver ningún profe.");
+    if (!values.category) {
+      const byYear = birth ? categoryByBirthYear(birth, ctx.today, ctx.categories) : null;
+      if (byYear) {
+        categoryId = byYear.id;
+        values.category = byYear.code;
+        warnings.push(`Sin categoría en la planilla: se asigna ${byYear.code} por el año de nacimiento.`);
+      } else warnings.push("Sin categoría: no lo va a ver ningún profe.");
+    }
 
     const positionId = values.position ? matchPosition(values.position, ctx.positions) : null;
     if (values.position && positionId === null) warnings.push(`Puesto no reconocido («${values.position}»): se deja sin puesto.`);
@@ -378,6 +397,7 @@ export function toImportPayload(rows: ParsedRow[]) {
       jersey_number: r.jersey,
       position_id: r.positionId,
       document_id: r.values.document_id || null,
+      school: r.values.school || null,
       guardian: r.values.guardian_name
         ? {
             full_name: r.values.guardian_name,

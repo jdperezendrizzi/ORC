@@ -130,6 +130,7 @@ export async function savePrivate(_: ActionResult, f: FormData): Promise<ActionR
     {
       player_id,
       document_id: optStr(f, "document_id"),
+      school: optStr(f, "school"),
       phone: optStr(f, "phone"),
       email: optStr(f, "email"),
       address: optStr(f, "address"),
