@@ -24,7 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.svg" alt="" width={514} height={560} className="h-[36px] w-auto" />
             <span className="text-lg font-black tracking-tight">
-              ORC <span className="text-orc-orange max-[420px]:hidden">Rendimiento</span>
+              ORC <span className="text-orc-orange max-[420px]:hidden">Performance</span>
             </span>
           </a>
           <div className="ml-4 flex-1">

@@ -11,7 +11,7 @@ export default function LoginPage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo.svg" alt="Escudo ORC" width={514} height={560} className="mx-auto h-[140px] w-auto" />
         <h1 className="mt-6 text-center text-2xl font-black">
-          ORC <span className="text-orc-orange">Rendimiento</span>
+          ORC <span className="text-orc-orange">Performance</span>
         </h1>
         <p className="mt-1 text-center text-sm text-white/60">Datos de rendimiento · de infantiles a Primera</p>
         <LoginForm />

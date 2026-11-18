@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "ORC Rendimiento",
+    name: "ORC Performance",
     short_name: "ORC",
     description: "Carga y seguimiento de datos de rendimiento del club.",
     start_url: "/",

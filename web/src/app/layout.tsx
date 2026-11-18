@@ -4,9 +4,9 @@ import { themeInitScript } from "@/components/theme-toggle";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "ORC Rendimiento", template: "%s · ORC" },
+  title: { default: "ORC Performance", template: "%s · ORC" },
   description: "Datos de rendimiento del club: evaluaciones, bienestar y lesiones por categoría.",
-  applicationName: "ORC Rendimiento",
+  applicationName: "ORC Performance",
   appleWebApp: { capable: true, title: "ORC", statusBarStyle: "black" },
   icons: {
     icon: [

@@ -31,7 +31,7 @@ export async function buildTeamPdf(r: TeamReport, crestDataUrl: string | null): 
     doc.setFontSize(17);
     doc.text("ORC", M + 25, 15);
     doc.setTextColor(...ORANGE);
-    doc.text("Rendimiento", M + 25 + doc.getTextWidth("ORC "), 15);
+    doc.text("Performance", M + 25 + doc.getTextWidth("ORC "), 15);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10.5);
     doc.setTextColor(255, 255, 255);
