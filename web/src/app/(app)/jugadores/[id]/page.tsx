@@ -11,7 +11,8 @@ import { CONCEPTS, DOMAIN_INFO, METRIC_INFO } from "@/lib/glossary";
 import { ShareReportButton } from "@/components/share-report";
 import { reportMetrics, type ReportData } from "@/lib/report/player-report";
 import { clubToday } from "@/lib/validation";
-import { getViewer } from "@/lib/server-data";
+import { canManageInjuries, getViewer, isStaff } from "@/lib/server-data";
+import { campaignLabel, outcomeOf } from "@/lib/ortho";
 import {
   bodyRegionLabel,
   domainLabel,
@@ -227,6 +228,16 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
       : report.metrics.length === 0
         ? "Todavía no hay evaluaciones de rendimiento para armar el informe."
         : null;
+
+  // Evaluación ortopédica: el profe ve sólo el resultado (la base filtra por jugadores visibles).
+  const orthoManage = canManageInjuries(profile);
+  const orthoRows = isStaff(profile)
+    ? (((await supabase.rpc("ortho_outcomes", { p_player_ids: [id] })).data ?? []) as {
+        campaign: number;
+        evaluated_on: string | null;
+        outcome: string | null;
+      }[])
+    : [];
 
   return (
     <div className="space-y-6">
@@ -478,6 +489,35 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
               );
             })}
           </ul>
+        </section>
+      )}
+
+      {/* Evaluación ortopédica (resultado por campaña) */}
+      {isStaff(profile) && (orthoRows.length > 0 || orthoManage) && (
+        <section className="card space-y-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-bold">Evaluación ortopédica</h2>
+            {orthoManage && (
+              <a href={`/ortopedia/${id}`} className="text-sm font-semibold text-orc-orange-strong hover:underline">
+                Ver ficha traumatológica →
+              </a>
+            )}
+          </div>
+          {orthoRows.length === 0 ? (
+            <p className="text-sm text-orc-muted">Todavía no tiene evaluaciones cargadas.</p>
+          ) : (
+            <ul className="flex flex-wrap gap-2">
+              {[...orthoRows].reverse().map((r) => {
+                const o = outcomeOf(r.outcome);
+                return (
+                  <li key={r.campaign} className={`chip ${o?.tone ?? ""} px-3 py-1.5`}>
+                    {campaignLabel(r.campaign)}: {o ? `${o.icon} ${o.label}` : "evaluado"}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {!orthoManage && <p className="text-xs text-orc-muted">El detalle médico lo maneja el área médica.</p>}
         </section>
       )}
 

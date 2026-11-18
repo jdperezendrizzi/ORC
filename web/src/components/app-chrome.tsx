@@ -76,6 +76,11 @@ const icons = {
       <path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17h.01" />
     </>
   ),
+  ortho: (
+    <>
+      <path d="M12 3v18M8 6h8M7 10h10M8 14h8M9 18h6" />
+    </>
+  ),
   wellness: (
     <path d="M12 20s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 10c0 5.65-7 10-7 10z" />
   ),
@@ -136,6 +141,7 @@ export function navItems({ canLoad, isAdmin = false, isStaff = true, modules, in
     },
     { href: "/bienestar", label: "Bienestar", icon: <Icon>{icons.wellness}</Icon>, primary: false, show: view("wellness") },
     { href: "/lesiones", label: "Lesiones", icon: <Icon>{icons.injuries}</Icon>, primary: false, show: view("injuries") },
+    { href: "/ortopedia", label: "Evaluación ortopédica", icon: <Icon>{icons.ortho}</Icon>, primary: false, show: isStaff },
     { href: "/admin", label: "Admin", icon: <Icon>{icons.admin}</Icon>, primary: false, show: isAdmin },
   ];
   return items.filter((i) => i.show).map(({ show: _show, ...i }) => i);
